@@ -182,7 +182,7 @@ function MembersToolbar({
 }: MembersToolbarProps) {
   return (
     <div
-      className="flex items-center justify-between gap-2 px-4 py-2.5 shrink-0"
+      className="flex items-center gap-2 px-4 py-2.5 shrink-0"
       style={{ borderBottom: "1px solid var(--t-border)", background: "var(--t-bg-sidebar)" }}
     >
       <div className="flex items-center gap-2 min-w-0">
@@ -204,27 +204,25 @@ function MembersToolbar({
           </div>
         )}
 
-        {canInvite && (
-          <button
-            onClick={onToggleInvite}
-            className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0"
-            style={{
-              background: showInvitePanel ? "var(--t-accent)" : "var(--t-bg-elevated)",
-              color: showInvitePanel ? "#fff" : "var(--t-text-primary)",
-              border: `1px solid ${showInvitePanel ? "var(--t-accent)" : "var(--t-border)"}`,
-            }}
-          >
-            <Icon icon="lucide:user-plus" width={13} />
-            Invite
-            {!!pendingCount && (
-              <span
-                className="absolute -top-1.5 -right-1.5 flex items-center justify-center text-[9px] font-bold rounded-full min-w-[16px] h-4 px-0.5"
-                style={{ background: "var(--t-status-error)", color: "#fff" }}
-              >
-                {pendingCount}
-              </span>
-            )}
-          </button>
+        <ToolbarViewControls
+          search={search}
+          onSearchChange={onSearchChange}
+          filterPlaceholder="Filter members…"
+          filterShortcutId="filter"
+          layoutMode={layoutMode}
+          onLayoutModeChange={onLayoutModeChange}
+          sortMode={sortMode}
+          onSortModeChange={onSortModeChange}
+          extraSortOptions={[{ value: "role-asc", label: "By role", icon: "lucide:shield" }]}
+          filterWidth={144}
+        />
+      </div>
+
+      <div className="ml-auto flex items-center gap-2 shrink-0">
+        {selectedCount > 1 && (
+          <span className="text-xs text-[var(--t-text-dim)] shrink-0">
+            {selectedCount} selected
+          </span>
         )}
 
         {canManageRoles && onToggleRoles && (
@@ -242,24 +240,34 @@ function MembersToolbar({
           </button>
         )}
 
-        {selectedCount > 1 && (
-          <span className="text-xs text-[var(--t-text-dim)] shrink-0">
-            {selectedCount} selected
-          </span>
+        {canInvite && (
+          <>
+            <div className="w-px h-5 self-center bg-[var(--t-border-hover)]" />
+            <button
+              onClick={onToggleInvite}
+              className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0"
+              style={{
+                background: showInvitePanel ? "var(--t-accent-hover)" : "var(--t-accent)",
+                color: "var(--t-bg-terminal)",
+                border: "1px solid var(--t-accent-hover)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--t-accent-hover)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = showInvitePanel ? "var(--t-accent-hover)" : "var(--t-accent)")}
+            >
+              <Icon icon="lucide:user-plus" width={13} />
+              Invite
+              {!!pendingCount && (
+                <span
+                  className="absolute -top-1.5 -right-1.5 flex items-center justify-center text-[9px] font-bold rounded-full min-w-[16px] h-4 px-0.5"
+                  style={{ background: "var(--t-status-error)", color: "#fff" }}
+                >
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+          </>
         )}
       </div>
-
-      <ToolbarViewControls
-        search={search}
-        onSearchChange={onSearchChange}
-        filterPlaceholder="Filter members…"
-        layoutMode={layoutMode}
-        onLayoutModeChange={onLayoutModeChange}
-        sortMode={sortMode}
-        onSortModeChange={onSortModeChange}
-        extraSortOptions={[{ value: "role-asc", label: "By role", icon: "lucide:shield" }]}
-        filterWidth={144}
-      />
     </div>
   );
 }

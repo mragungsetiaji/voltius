@@ -53,65 +53,13 @@ export function SnippetsToolbar({
         ref={rowRef}
         className="flex items-center gap-2 px-5 py-2.5 bg-[var(--t-bg-sidebar)] border-b border-b-[var(--t-bg-terminal)]"
       >
-        <div ref={leftRef} className="flex items-center gap-2 shrink-0">
-          <div className="relative flex items-center gap-px" ref={wrapperRef}>
-            {/* Primary action */}
-            <button
-              onClick={onNewSnippet}
-              onMouseDown={createRipple}
-              title={compact ? "New Snippet" : undefined}
-              type="button"
-              className="flex items-center gap-2 px-3 h-8 text-sm font-bold tracking-wider transition-colors shrink-0 whitespace-nowrap bg-[var(--t-bg-input)] text-[var(--t-text-primary)] relative overflow-hidden rounded-tl-[0.533rem] rounded-bl-[0.533rem]"
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--t-bg-input-hover)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--t-bg-input)")}
-            >
-              {rippleEls}
-              <Icon icon="lucide:braces" width={18} />
-              {!compact && "NEW SNIPPET"}
-            </button>
-
-            {/* Chevron dropdown */}
-            <button
-              onClick={openMenu}
-              onMouseDown={rippleChevron}
-              type="button"
-              aria-label="New snippet options"
-              className="flex items-center justify-center w-8 h-8 transition-colors bg-[var(--t-bg-input)] relative overflow-hidden rounded-tr-[0.533rem] rounded-br-[0.533rem]"
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--t-bg-input-hover)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--t-bg-input)")}
-            >
-              {ripplesChevron}
-              <span className="[&_path]:[stroke-width:3]">
-                <Icon icon="lucide:chevron-down" width={20} color="white" />
-              </span>
-            </button>
-
-            {menuOpen && (
-              <div
-                className="p-1.5 rounded-xl fixed z-[9999] bg-[var(--t-bg-card)] border border-[var(--t-bg-card-hover)]"
-                style={{
-                  top: menuPos.top,
-                  left: menuPos.left,
-                  width: "max-content",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-                }}
-              >
-                <DropdownMenuItem
-                  icon="lucide:folder-plus"
-                  label="New Folder"
-                  onClick={() => { setMenuOpen(false); onNewFolder(); }}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div ref={rightRef} className="ml-auto flex items-center gap-1.5">
+        <div ref={leftRef} className="flex items-center gap-1.5">
           <FilterInput
             value={search}
             onChange={onSearchChange}
             placeholder="Filter snippets..."
             width={176}
+            shortcutId="filter"
           />
           <ToolbarDropdown
             icon={SORT_MODE_ICONS[sortMode]}
@@ -125,6 +73,59 @@ export function SnippetsToolbar({
             ]}
             onChange={onSortModeChange}
           />
+        </div>
+
+        <div ref={rightRef} className="ml-auto shrink-0">
+        <div className="relative flex items-center gap-px" ref={wrapperRef}>
+          <button
+            onClick={onNewSnippet}
+            onMouseDown={createRipple}
+            title={compact ? "New Snippet" : undefined}
+            type="button"
+            className="flex items-center gap-2 px-3 h-8 text-sm font-bold tracking-wider transition-colors shrink-0 whitespace-nowrap relative overflow-hidden rounded-tl-[0.533rem] rounded-bl-[0.533rem]"
+            style={{ background: "var(--t-accent)", color: "var(--t-bg-terminal)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--t-accent-hover)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--t-accent)")}
+          >
+            {rippleEls}
+            <Icon icon="lucide:braces" width={18} />
+            {!compact && "NEW SNIPPET"}
+          </button>
+
+          <button
+            onClick={openMenu}
+            onMouseDown={rippleChevron}
+            type="button"
+            aria-label="New snippet options"
+            className="flex items-center justify-center w-8 h-8 transition-colors relative overflow-hidden rounded-tr-[0.533rem] rounded-br-[0.533rem]"
+            style={{ background: "color-mix(in srgb, var(--t-accent) 80%, black)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--t-accent-hover)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "color-mix(in srgb, var(--t-accent) 80%, black)")}
+          >
+            {ripplesChevron}
+            <span className="[&_path]:[stroke-width:3]">
+              <Icon icon="lucide:chevron-down" width={20} style={{ color: "var(--t-bg-terminal)" }} />
+            </span>
+          </button>
+
+          {menuOpen && (
+            <div
+              className="p-1.5 rounded-xl fixed z-[9999] bg-[var(--t-bg-card)] border border-[var(--t-bg-card-hover)]"
+              style={{
+                top: menuPos.top,
+                left: menuPos.left,
+                width: "max-content",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+              }}
+            >
+              <DropdownMenuItem
+                icon="lucide:folder-plus"
+                label="New Folder"
+                onClick={() => { setMenuOpen(false); onNewFolder(); }}
+              />
+            </div>
+          )}
+        </div>
         </div>
       </div>
     </>

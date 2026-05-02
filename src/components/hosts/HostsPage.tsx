@@ -676,6 +676,7 @@ export default function HostsPage() {
             onCreateFolder={() => void saveFolder({ name: "New Folder", object_type: "connection", parent_folder_id: activeFolderId ?? undefined, vault_id: defaultVaultId }).then((f) => { setShowForm(false); setEditingId(null); setEditingFolderId(f.id); })}
             onOpenLocalTerminal={() => connectLocal().catch((e) => setError(String(e)))}
             onOpenSerial={() => setError("Serial console coming soon!")}
+            onOpenImportExport={(mode) => useUIStore.getState().openImportExport(mode)}
             layoutMode={layoutMode}
             onLayoutModeChange={setLayoutMode}
             sortMode={sortMode}

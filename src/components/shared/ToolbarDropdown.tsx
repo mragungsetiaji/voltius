@@ -30,11 +30,13 @@ interface Props<T extends string> {
   /** Which side the menu opens from (default: "right") */
   align?: "left" | "right";
   disabled?: boolean;
+  /** "accent" styles the split button as a primary CTA */
+  variant?: "default" | "accent";
 }
 
 export function ToolbarDropdown<T extends string>({
   icon, value, options, items, menuWidth = 160, className = "", onChange,
-  label, onAction, align = "right", disabled,
+  label, onAction, align = "right", disabled, variant = "default",
 }: Props<T>) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -82,16 +84,27 @@ export function ToolbarDropdown<T extends string>({
   );
 
   if (onAction) {
+    const isAccent = variant === "accent";
+    const actionBg = isAccent ? "var(--t-accent)" : "var(--t-bg-input)";
+    const actionBgHover = isAccent ? "var(--t-accent-hover)" : "var(--t-bg-input-hover)";
+    const actionText = isAccent ? "var(--t-bg-terminal)" : "var(--t-text-primary)";
+    const actionBorder = isAccent ? "var(--t-accent-hover)" : "var(--t-border-hover)";
+    const chevronBg = isAccent ? "color-mix(in srgb, var(--t-accent) 80%, black)" : "var(--t-bg-input)";
+    const chevronBgHover = isAccent ? "var(--t-accent-hover)" : "var(--t-bg-input-hover)";
+
     return (
       <div className={`relative flex items-center gap-px ${className}`} ref={ref}>
         <button
           type="button"
           onClick={onAction}
           disabled={disabled}
-          className="flex items-center gap-2 px-3 h-8 text-sm font-bold tracking-wider transition-colors shrink-0 whitespace-nowrap relative overflow-hidden bg-[var(--t-bg-input)] text-[var(--t-text-primary)] border border-[var(--t-border-hover)] border-r-0 rounded-tl-[0.533rem] rounded-bl-[0.533rem]"
-          style={{ opacity: disabled ? 0.4 : 1, cursor: disabled ? "not-allowed" : "pointer" }}
-          onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.background = "var(--t-bg-input-hover)"; }}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "var(--t-bg-input)")}
+          className="flex items-center gap-2 px-3 h-8 text-sm font-bold tracking-wider transition-colors shrink-0 whitespace-nowrap relative overflow-hidden border border-r-0 rounded-tl-[0.533rem] rounded-bl-[0.533rem]"
+          style={{
+            background: actionBg, color: actionText, borderColor: actionBorder,
+            opacity: disabled ? 0.4 : 1, cursor: disabled ? "not-allowed" : "pointer",
+          }}
+          onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.background = actionBgHover; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = actionBg; }}
         >
           <Icon icon={icon} width={20} />
           {label}
@@ -99,13 +112,14 @@ export function ToolbarDropdown<T extends string>({
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="flex items-center justify-center w-8 h-8 transition-colors relative overflow-hidden bg-[var(--t-bg-input)] text-[var(--t-text-primary)] border border-[var(--t-border-hover)] rounded-tr-[0.533rem] rounded-br-[0.533rem]"
-          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--t-bg-input-hover)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "var(--t-bg-input)")}
+          className="flex items-center justify-center w-8 h-8 transition-colors relative overflow-hidden border rounded-tr-[0.533rem] rounded-br-[0.533rem]"
+          style={{ background: chevronBg, color: actionText, borderColor: actionBorder }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = chevronBgHover)}
+          onMouseLeave={(e) => (e.currentTarget.style.background = chevronBg)}
           title="More options"
         >
           <span className="[&_path]:[stroke-width:3]">
-            <Icon icon="lucide:chevron-down" width={20} color="white" />
+            <Icon icon="lucide:chevron-down" width={20} />
           </span>
         </button>
         {menuEl}

@@ -40,12 +40,6 @@ export function useImportExportContributions() {
           { label: "Export…", icon: "lucide:download", onClick: () => useUIStore.getState().openImportExport("export") },
         ]),
 
-      registerContribution(ID, "home.toolbar.hostMenu",
-        () => [
-          { label: "Import…", icon: "lucide:upload", onClick: () => useUIStore.getState().openImportExport("import") },
-          { label: "Export…", icon: "lucide:download", onClick: () => useUIStore.getState().openImportExport("export") },
-        ]),
-
       registerContribution(ID, "settings.vaults",
         () => [
           { label: "Export Vault", icon: "lucide:download", onClick: () => useUIStore.getState().openImportExport("export") },

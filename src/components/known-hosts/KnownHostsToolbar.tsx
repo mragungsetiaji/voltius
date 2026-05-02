@@ -31,7 +31,19 @@ export function KnownHostsToolbar({
         ref={rowRef}
         className="flex items-center gap-2 px-5 py-2.5 shrink-0 bg-[var(--t-bg-sidebar)] border-b border-b-[var(--t-bg-terminal)]"
       >
-        <div ref={leftRef} className="flex items-center gap-2 shrink-0">
+        <div ref={leftRef} className="flex items-center">
+          <ToolbarViewControls
+            search={search}
+            onSearchChange={onSearchChange}
+            filterShortcutId="filter"
+            layoutMode={layoutMode}
+            onLayoutModeChange={onLayoutModeChange}
+            sortMode={sortMode}
+            onSortModeChange={onSortModeChange}
+          />
+        </div>
+
+        <div ref={rightRef} className="flex items-center gap-2 ml-auto shrink-0">
           {selectedCount > 0 && onDeleteSelected && (
             <button
               onClick={onDeleteSelected}
@@ -48,17 +60,6 @@ export function KnownHostsToolbar({
               )}
             </button>
           )}
-        </div>
-
-        <div ref={rightRef} className="flex items-center gap-2 ml-auto">
-          <ToolbarViewControls
-            search={search}
-            onSearchChange={onSearchChange}
-            layoutMode={layoutMode}
-            onLayoutModeChange={onLayoutModeChange}
-            sortMode={sortMode}
-            onSortModeChange={onSortModeChange}
-          />
         </div>
       </div>
     </>

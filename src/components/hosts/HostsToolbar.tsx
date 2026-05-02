@@ -22,6 +22,7 @@ interface HomeToolbarProps {
   canCreateFolder?: boolean;
   onOpenLocalTerminal: () => void;
   onOpenSerial: () => void;
+  onOpenImportExport: (mode: "import" | "export") => void;
   layoutMode: LayoutMode;
   onLayoutModeChange: (value: LayoutMode) => void;
   sortMode: SortMode;
@@ -41,6 +42,7 @@ export function HomeToolbar({
   onCreateFolder,
   onOpenLocalTerminal,
   onOpenSerial,
+  onOpenImportExport,
   canCreate = true,
   canCreateFolder = true,
   layoutMode,
@@ -73,48 +75,12 @@ export function HomeToolbar({
   return (
     <>
       <div ref={rowRef} className="flex items-center gap-2 px-5 py-2.5 bg-[var(--t-bg-sidebar)] border-b border-b-[var(--t-bg-terminal)]">
-        <div ref={leftRef} className="flex items-center gap-2 shrink-0">
-          <ToolbarDropdown
-            icon="lucide:server"
-            label={compact ? undefined : "NEW HOST"}
-            onAction={onCreateHost}
-            items={newHostItems}
-            align="left"
-            disabled={!canCreate}
-            menuWidth={202}
-          />
-
-          <ToolbarDropdown
-            icon="lucide:terminal"
-            label={compact ? undefined : "TERMINAL"}
-            value={preferredShell ?? shells[0]?.path ?? ""}
-            options={shells.map((s) => ({ value: s.path, label: s.name }))}
-            menuWidth={200}
-            align="left"
-            onAction={onOpenLocalTerminal}
-            onChange={setPreferredShell}
-          />
-
-          <button
-            className="flex items-center gap-2 px-3 py-2 h-8 rounded-lg text-sm font-bold tracking-wider transition-colors shrink-0 whitespace-nowrap bg-[var(--t-bg-input)] text-[var(--t-text-primary)] border border-[var(--t-border-hover)] relative overflow-hidden"
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--t-bg-input-hover)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--t-bg-input)")}
-            onMouseDown={rippleSerial}
-            onClick={onOpenSerial}
-            title="Open serial console"
-            type="button"
-          >
-            {ripplesSerial}
-            <Icon icon="lucide:ethernet-port" width={20} />
-            {!compact && "SERIAL"}
-          </button>
-        </div>
-
-        <div ref={rightRef} className="ml-auto flex">
+        <div ref={leftRef} className="flex items-center">
           <ToolbarViewControls
             search={search}
             onSearchChange={onSearchChange}
             filterPlaceholder="Filter hosts..."
+            filterShortcutId="filter"
             filterWidth={176}
             layoutMode={layoutMode}
             onLayoutModeChange={onLayoutModeChange}
@@ -126,6 +92,58 @@ export function HomeToolbar({
             onTagFilterChange={onTagFilterChange}
             onRenameTag={onRenameTag}
             onDeleteTag={onDeleteTag}
+          />
+        </div>
+
+        <div ref={rightRef} className="ml-auto flex items-center gap-2 shrink-0">
+          <button
+            className="flex items-center gap-2 px-3 py-2 h-8 rounded-lg text-sm font-bold tracking-wider transition-colors shrink-0 whitespace-nowrap bg-[var(--t-bg-input)] text-[var(--t-text-primary)] border border-[var(--t-border-hover)] relative overflow-hidden"
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--t-bg-input-hover)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--t-bg-input)")}
+            onMouseDown={rippleSerial}
+            onClick={onOpenSerial}
+            title="Open serial console"
+            type="button"
+          >
+            {ripplesSerial}
+            <Icon icon="lucide:ethernet-port" width={20} />
+            {!compact && "Serial"}
+          </button>
+
+          <ToolbarDropdown
+            icon="lucide:terminal"
+            label={compact ? undefined : "Terminal"}
+            value={preferredShell ?? shells[0]?.path ?? ""}
+            options={shells.map((s) => ({ value: s.path, label: s.name }))}
+            menuWidth={200}
+            align="right"
+            onAction={onOpenLocalTerminal}
+            onChange={setPreferredShell}
+          />
+
+          <div className="w-px h-5 self-center bg-[var(--t-border-hover)] mx-1" />
+
+          <ToolbarDropdown
+            icon="lucide:arrow-right-left"
+            label={compact ? undefined : "Import/Export"}
+            onAction={() => onOpenImportExport("import")}
+            items={[
+              { label: "Import…", icon: "lucide:upload", onClick: () => onOpenImportExport("import") },
+              { label: "Export…", icon: "lucide:download", onClick: () => onOpenImportExport("export") },
+            ]}
+            align="right"
+            menuWidth={160}
+          />
+
+          <ToolbarDropdown
+            icon="lucide:plus"
+            label={compact ? undefined : "New Host"}
+            onAction={onCreateHost}
+            items={newHostItems}
+            align="right"
+            disabled={!canCreate}
+            menuWidth={202}
+            variant="accent"
           />
         </div>
       </div>

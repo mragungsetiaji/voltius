@@ -43,26 +43,23 @@ export function KeychainToolbar({
   return (
     <>
       <div ref={rowRef} className="flex items-center gap-2 px-5 py-2.5 shrink-0 bg-[var(--t-bg-sidebar)] border-b border-b-[var(--t-bg-terminal)]">
-        <div ref={leftRef} className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center gap-px">
-            <button
-              onClick={onImportKey}
-              onMouseDown={rippleKey}
-              disabled={!onImportKey}
-              title={compact ? "New Key" : undefined}
-              className="flex items-center gap-2 px-3 h-8 text-sm font-bold tracking-wider transition-colors shrink-0 whitespace-nowrap bg-[var(--t-bg-input)] text-[var(--t-text-primary)] relative overflow-hidden rounded-tl-[0.533rem] rounded-bl-[0.533rem]"
-              style={{ opacity: !onImportKey ? 0.35 : undefined, cursor: !onImportKey ? "default" : undefined }}
-              onMouseEnter={(e) => { if (onImportKey) e.currentTarget.style.background = "var(--t-bg-input-hover)"; }}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--t-bg-input)")}
-              type="button"
-            >
-              {ripplesKey}
-              <Icon icon="lucide:key-round" width={18} />
-              {!compact && "NEW KEY"}
-            </button>
-            <NewKeyChevron onImport={onImportKey} onGenerate={onGenerateKey} onNewFolder={onNewFolder} />
-          </div>
+        <div ref={leftRef} className="flex items-center">
+          <ToolbarViewControls
+            search={search}
+            onSearchChange={onSearchChange}
+            filterPlaceholder="Filter..."
+            filterShortcutId="filter"
+            layoutMode={layoutMode}
+            onLayoutModeChange={onLayoutModeChange}
+            sortMode={sortMode}
+            onSortModeChange={onSortModeChange}
+            availableTags={availableTags}
+            tagFilter={tagFilter}
+            onTagFilterChange={onTagFilterChange}
+          />
+        </div>
 
+        <div ref={rightRef} className="ml-auto flex items-center gap-2 shrink-0">
           <button
             onClick={onNewIdentity}
             onMouseDown={rippleIdentity}
@@ -78,21 +75,27 @@ export function KeychainToolbar({
             <Icon icon="lucide:user-plus" width={18} />
             {!compact && "NEW IDENTITY"}
           </button>
-        </div>
 
-        <div ref={rightRef} className="ml-auto flex">
-          <ToolbarViewControls
-            search={search}
-            onSearchChange={onSearchChange}
-            filterPlaceholder="Filter..."
-            layoutMode={layoutMode}
-            onLayoutModeChange={onLayoutModeChange}
-            sortMode={sortMode}
-            onSortModeChange={onSortModeChange}
-            availableTags={availableTags}
-            tagFilter={tagFilter}
-            onTagFilterChange={onTagFilterChange}
-          />
+          <div className="w-px h-5 self-center bg-[var(--t-border-hover)]" />
+
+          <div className="flex items-center gap-px">
+            <button
+              onClick={onImportKey}
+              onMouseDown={rippleKey}
+              disabled={!onImportKey}
+              title={compact ? "New Key" : undefined}
+              className="flex items-center gap-2 px-3 h-8 text-sm font-bold tracking-wider transition-colors shrink-0 whitespace-nowrap relative overflow-hidden rounded-tl-[0.533rem] rounded-bl-[0.533rem]"
+              style={{ background: "var(--t-accent)", color: "var(--t-bg-terminal)", opacity: !onImportKey ? 0.4 : 1, cursor: !onImportKey ? "default" : undefined }}
+              onMouseEnter={(e) => { if (onImportKey) e.currentTarget.style.background = "var(--t-accent-hover)"; }}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--t-accent)")}
+              type="button"
+            >
+              {ripplesKey}
+              <Icon icon="lucide:key-round" width={18} />
+              {!compact && "NEW KEY"}
+            </button>
+            <NewKeyChevron onImport={onImportKey} onGenerate={onGenerateKey} onNewFolder={onNewFolder} accent />
+          </div>
         </div>
       </div>
     </>
@@ -103,7 +106,7 @@ export function KeychainToolbar({
 // Split chevron for "NEW KEY" button
 // ─────────────────────────────────────────────────────────────────
 
-function NewKeyChevron({ onGenerate, onNewFolder }: { onImport?: () => void; onGenerate?: () => void; onNewFolder: () => void }) {
+function NewKeyChevron({ onGenerate, onNewFolder, accent }: { onImport?: () => void; onGenerate?: () => void; onNewFolder: () => void; accent?: boolean }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -131,9 +134,10 @@ function NewKeyChevron({ onGenerate, onNewFolder }: { onImport?: () => void; onG
       <button
         onClick={handleClick}
         onMouseDown={createRipple}
-        className="flex items-center justify-center w-8 h-8 transition-colors bg-[var(--t-bg-input)] relative overflow-hidden rounded-tr-[0.533rem] rounded-br-[0.533rem]"
-        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--t-bg-input-hover)")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "var(--t-bg-input)")}
+        className="flex items-center justify-center w-8 h-8 transition-colors relative overflow-hidden rounded-tr-[0.533rem] rounded-br-[0.533rem]"
+        style={{ background: accent ? "color-mix(in srgb, var(--t-accent) 80%, black)" : "var(--t-bg-input)" }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = accent ? "var(--t-accent-hover)" : "var(--t-bg-input-hover)")}
+        onMouseLeave={(e) => (e.currentTarget.style.background = accent ? "color-mix(in srgb, var(--t-accent) 80%, black)" : "var(--t-bg-input)")}
         type="button"
         aria-label="New key options"
       >

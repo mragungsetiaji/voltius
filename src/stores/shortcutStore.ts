@@ -45,6 +45,7 @@ const DEFAULTS: Omit<Shortcut, "key">[] = [
   { id: "delete",       label: "Delete Selected",   description: "Delete selected items",   defaultKey: "Delete", ctrl: false, shift: false },
   { id: "undo",         label: "Undo",              description: "Undo last action",         defaultKey: "z",      ctrl: true,  shift: false },
   { id: "redo",         label: "Redo",              description: "Redo last undone action",  defaultKey: "z",      ctrl: true,  shift: true  },
+  { id: "filter",        label: "Focus Filter",      description: "Focus the search filter",  defaultKey: "f",      ctrl: true,  shift: false },
 ];
 
 function toShortcut(s: Omit<Shortcut, "key">): Shortcut {

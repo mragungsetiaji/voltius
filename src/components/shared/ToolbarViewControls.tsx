@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { ToolbarDropdown } from "./ToolbarDropdown";
+import { matchShortcut } from "@/stores/shortcutStore";
 
 export type LayoutMode = "grid" | "list";
 export type SortMode = "name-asc" | "name-desc" | "newest" | "oldest" | "role-asc";
@@ -22,6 +23,7 @@ interface Props {
   search: string;
   onSearchChange: (v: string) => void;
   filterPlaceholder?: string;
+  filterShortcutId?: string;
   layoutMode: LayoutMode;
   onLayoutModeChange: (v: LayoutMode) => void;
   sortMode: SortMode;
@@ -41,12 +43,29 @@ export function FilterInput({
   onChange,
   placeholder = "Filter...",
   width = 144,
+  shortcutId,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   width?: number;
+  shortcutId?: string;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!shortcutId) return;
+    const handler = (e: KeyboardEvent) => {
+      if (matchShortcut(shortcutId, e)) {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [shortcutId]);
+
   return (
     <div className="relative">
       <Icon
@@ -55,6 +74,7 @@ export function FilterInput({
         className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--t-text-dim)]"
       />
       <input
+        ref={inputRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -74,6 +94,7 @@ export function ToolbarViewControls({
   search,
   onSearchChange,
   filterPlaceholder = "Filter...",
+  filterShortcutId,
   layoutMode,
   onLayoutModeChange,
   sortMode,
@@ -89,7 +110,7 @@ export function ToolbarViewControls({
 }: Props) {
   return (
     <div className="flex items-center gap-1.5">
-      <FilterInput value={search} onChange={onSearchChange} placeholder={filterPlaceholder} width={filterWidth} />
+      <FilterInput value={search} onChange={onSearchChange} placeholder={filterPlaceholder} width={filterWidth} shortcutId={filterShortcutId} />
 
       <div className="flex items-center">
         <ToolbarDropdown
