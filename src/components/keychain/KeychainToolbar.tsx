@@ -122,7 +122,7 @@ function NewKeyChevron({ onGenerate, onNewIdentity, onNewFolder, accent }: { onI
       >
         {rippleEls}
         <span className="[&_path]:[stroke-width:3]">
-          <Icon icon="lucide:chevron-down" width={20} color="var(--t-bg-terminal)" />
+          <Icon icon="lucide:chevron-down" width={20} color="var(--t-bg-terminal)" style={{ transition: "transform 150ms", transform: open ? "rotate(180deg)" : "rotate(0deg)" }} />
         </span>
       </button>
 

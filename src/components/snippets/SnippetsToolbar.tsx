@@ -104,7 +104,7 @@ export function SnippetsToolbar({
           >
             {ripplesChevron}
             <span className="[&_path]:[stroke-width:3]">
-              <Icon icon="lucide:chevron-down" width={20} style={{ color: "var(--t-bg-terminal)" }} />
+              <Icon icon="lucide:chevron-down" width={20} style={{ color: "var(--t-bg-terminal)", transition: "transform 150ms", transform: menuOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
             </span>
           </button>
 

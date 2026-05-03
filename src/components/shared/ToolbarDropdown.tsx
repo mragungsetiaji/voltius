@@ -119,7 +119,7 @@ export function ToolbarDropdown<T extends string>({
           title="More options"
         >
           <span className="[&_path]:[stroke-width:3]">
-            <Icon icon="lucide:chevron-down" width={20} />
+            <Icon icon="lucide:chevron-down" width={20} style={{ transition: "transform 150ms", transform: open ? "rotate(180deg)" : "rotate(0deg)" }} />
           </span>
         </button>}
         {menuEl}
