@@ -9,7 +9,9 @@ import type { Connection } from "@/types";
 const HOSTS_PER_VAULT = 6;
 
 function displayName(c: Connection): string {
-  return c.name?.trim() || `${c.username}@${c.host}`;
+  if (c.name?.trim()) return c.name.trim();
+  if (c.connection_type === "serial" || c.serial_port) return c.serial_port ?? "Serial";
+  return `${c.username}@${c.host}`;
 }
 
 function topHosts(connections: Connection[]): Connection[] {

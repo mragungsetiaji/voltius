@@ -10,6 +10,7 @@
   <p><strong>A modern SSH client built with Tauri, React, and Rust.</strong></p>
 
   <p>
+    <img src="https://img.shields.io/badge/status-beta-f59e0b" alt="Beta" />
     <img src="https://img.shields.io/badge/built_with-Rust-dea584?logo=rust" alt="Rust" />
     <img src="https://img.shields.io/badge/UI-Tauri-24c8db?logo=tauri" alt="Tauri" />
     <img src="https://img.shields.io/badge/Security-E2EE-green" alt="E2EE" />

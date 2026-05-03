@@ -17,9 +17,10 @@ interface Props {
   onPick: (h: HostChoice) => void;
   selectedHostId?: string;
   onBack?: () => void;
+  sshOnly?: boolean;
 }
 
-export function HostPickerPanel({ onPick, selectedHostId, onBack }: Props) {
+export function HostPickerPanel({ onPick, selectedHostId, onBack, sshOnly }: Props) {
   const { connections, loadConnections } = useConnectionStore();
   useEffect(() => { void loadConnections(); }, [loadConnections]);
 
@@ -29,8 +30,11 @@ export function HostPickerPanel({ onPick, selectedHostId, onBack }: Props) {
   const setHomePendingAction = useUIStore((s) => s.setHomePendingAction);
 
   const filtered = useMemo(
-    () => connections.filter((c) => matchesSearch(c, search)).sort((a, b) => compareConnections(a, b, sortMode)),
-    [connections, search, sortMode],
+    () => connections
+      .filter((c) => !sshOnly || c.connection_type !== "serial")
+      .filter((c) => matchesSearch(c, search))
+      .sort((a, b) => compareConnections(a, b, sortMode)),
+    [connections, search, sortMode, sshOnly],
   );
 
   return (

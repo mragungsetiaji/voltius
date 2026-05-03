@@ -4,8 +4,14 @@ import { ConnectionAvatar } from "@/components/shared/ConnectionAvatar";
 import { useConnectionStore } from "@/stores/connectionStore";
 import { useHostPingStore } from "@/stores/hostPingStore";
 
+function isSerialConn(c: Connection): boolean {
+  return c.connection_type === "serial" || !!c.serial_port;
+}
+
 function displayName(c: Connection): string {
-  return c.name?.trim() || `${c.username}@${c.host}`;
+  if (c.name?.trim()) return c.name.trim();
+  if (isSerialConn(c)) return c.serial_port ?? "Serial";
+  return `${c.username}@${c.host}`;
 }
 
 interface Props {
@@ -18,7 +24,8 @@ export function DashboardHostCard({ connection, onConnect }: Props) {
   const isPinned = connection.pinned ?? false;
   const pingEnabled = useHostPingStore((s) => s.enabled);
   const pingStatus = useHostPingStore((s) => s.statuses[connection.id]);
-  const showPingDot = pingEnabled && !connection.ping_disabled;
+  const isSerial = isSerialConn(connection);
+  const showPingDot = pingEnabled && !connection.ping_disabled && !isSerial;
 
   return (
     <div
@@ -79,7 +86,7 @@ export function DashboardHostCard({ connection, onConnect }: Props) {
         {displayName(connection)}
       </span>
       <span className="text-[10px]" style={{ color: "var(--t-text-dim)" }}>
-        {connection.host}
+        {isSerial ? (connection.serial_baud ? `${connection.serial_baud} baud` : "") : connection.host}
       </span>
     </div>
   );

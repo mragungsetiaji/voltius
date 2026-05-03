@@ -142,7 +142,7 @@ export function SidePane({
 
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-hidden">
-        {phase.tag === "picking" && <HostPickerPanel onPick={onPick} />}
+        {phase.tag === "picking" && <HostPickerPanel onPick={onPick} sshOnly />}
 
         {phase.tag === "connecting" && (() => {
           const h = phase.host;

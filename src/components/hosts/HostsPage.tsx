@@ -282,6 +282,7 @@ export default function HostsPage() {
     try {
       const newConn = await saveConnection({
         name: conn.name ? `${conn.name} (copy)` : undefined,
+        connection_type: conn.connection_type,
         host: conn.host,
         port: conn.port,
         username: conn.username,
@@ -290,8 +291,17 @@ export default function HostsPage() {
         identity_id: conn.identity_id,
         folder_id: conn.folder_id,
         vault_id: conn.vault_id ?? "personal",
+        serial_port: conn.serial_port,
+        serial_baud: conn.serial_baud,
+        serial_data_bits: conn.serial_data_bits,
+        serial_parity: conn.serial_parity,
+        serial_stop_bits: conn.serial_stop_bits,
+        serial_flow_control: conn.serial_flow_control,
+        pre_command: conn.pre_command,
+        post_command: conn.post_command,
+        terminal_encoding: conn.terminal_encoding,
       });
-      if (newConn) {
+      if (newConn && conn.connection_type !== "serial") {
         const pwd = await getSecret(`password:${conn.id}`).catch(() => null);
         const key = await getSecret(`key:${conn.id}`).catch(() => null);
         if (pwd) await storeSecret(`password:${newConn.id}`, pwd);
