@@ -12,7 +12,11 @@ fn is_alive(deleted_at: &Option<String>, updated_at: &str) -> bool {
 }
 
 fn max_clock(clocks: &HashMap<String, String>, fallback: &str) -> String {
-    clocks.values().max().cloned().unwrap_or_else(|| fallback.to_string())
+    clocks
+        .values()
+        .max()
+        .cloned()
+        .unwrap_or_else(|| fallback.to_string())
 }
 
 #[tauri::command]
@@ -62,14 +66,28 @@ pub fn identity_update(id: String, data: IdentityFormData) -> Result<Identity, S
         .find(|i| i.id == id)
         .ok_or_else(|| format!("Identity {} not found", id))?;
     let now = Utc::now().to_rfc3339();
-    if identity.name != data.name         { identity.clocks.insert("name".to_string(),      now.clone()); }
-    if identity.username != data.username { identity.clocks.insert("username".to_string(),  now.clone()); }
-    if identity.key_id != data.key_id     { identity.clocks.insert("key_id".to_string(),    now.clone()); }
-    if identity.folder_id != data.folder_id { identity.clocks.insert("folder_id".to_string(), now.clone()); }
+    if identity.name != data.name {
+        identity.clocks.insert("name".to_string(), now.clone());
+    }
+    if identity.username != data.username {
+        identity.clocks.insert("username".to_string(), now.clone());
+    }
+    if identity.key_id != data.key_id {
+        identity.clocks.insert("key_id".to_string(), now.clone());
+    }
+    if identity.folder_id != data.folder_id {
+        identity.clocks.insert("folder_id".to_string(), now.clone());
+    }
 
-    let effective_vault = data.vault_id.as_deref().unwrap_or(&identity.vault_id).to_string();
+    let effective_vault = data
+        .vault_id
+        .as_deref()
+        .unwrap_or(&identity.vault_id)
+        .to_string();
     if let Some(ref vid) = data.vault_id {
-        if identity.vault_id != *vid { identity.clocks.insert("vault_id".to_string(), now.clone()); }
+        if identity.vault_id != *vid {
+            identity.clocks.insert("vault_id".to_string(), now.clone());
+        }
     }
     check_vault_write(&[effective_vault])?;
 
@@ -78,7 +96,9 @@ pub fn identity_update(id: String, data: IdentityFormData) -> Result<Identity, S
     identity.key_id = data.key_id;
     identity.folder_id = data.folder_id;
     identity.pinned = data.pinned;
-    if let Some(vid) = data.vault_id { identity.vault_id = vid; }
+    if let Some(vid) = data.vault_id {
+        identity.vault_id = vid;
+    }
     identity.deleted_at = None;
     identity.updated_at = max_clock(&identity.clocks, &now);
     let updated = identity.clone();
@@ -96,7 +116,9 @@ pub fn identity_delete(id: String) -> Result<(), String> {
         .ok_or_else(|| format!("Identity {} not found", id))?;
     check_vault_write(&[identity.vault_id.clone()])?;
     identity.deleted_at = Some(now.clone());
-    identity.clocks.insert("__deleted__".to_string(), now.clone());
+    identity
+        .clocks
+        .insert("__deleted__".to_string(), now.clone());
     identity.updated_at = max_clock(&identity.clocks, &now);
     save_identities(&identities)
 }

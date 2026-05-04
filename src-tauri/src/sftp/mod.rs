@@ -31,7 +31,10 @@ pub struct SftpStepEvent {
 fn emit_step(app: &AppHandle, connect_id: &str, step: SftpStep, detail: impl Into<String>) {
     let _ = app.emit(
         &format!("sftp-step-{}", connect_id),
-        SftpStepEvent { step, detail: detail.into() },
+        SftpStepEvent {
+            step,
+            detail: detail.into(),
+        },
     );
 }
 
@@ -96,7 +99,12 @@ impl SftpManager {
             ..Default::default()
         };
         let (ssh_client, rejection_reason) = SshClient::new(host.to_string(), port, known_hosts);
-        emit_step(app, connect_id, SftpStep::TcpConnected, format!("{}:{}", host, port));
+        emit_step(
+            app,
+            connect_id,
+            SftpStep::TcpConnected,
+            format!("{}:{}", host, port),
+        );
         let mut handle =
             match russh::client::connect(Arc::new(config), (host, port), ssh_client).await {
                 Ok(h) => h,
@@ -106,12 +114,25 @@ impl SftpManager {
                 }
             };
 
-        emit_step(app, connect_id, SftpStep::Handshake, "Negotiating algorithms");
-        emit_step(app, connect_id, SftpStep::Authenticating, format!("{}@{}", username, host));
+        emit_step(
+            app,
+            connect_id,
+            SftpStep::Handshake,
+            "Negotiating algorithms",
+        );
+        emit_step(
+            app,
+            connect_id,
+            SftpStep::Authenticating,
+            format!("{}@{}", username, host),
+        );
         let auth = if let Some(key_str) = private_key {
             let key = russh::keys::decode_secret_key(key_str, None)
                 .map_err(|e| format!("Invalid private key: {e}"))?;
-            let kwa = PrivateKeyWithHashAlg::new(Arc::new(key), Some(russh::keys::ssh_key::HashAlg::Sha256));
+            let kwa = PrivateKeyWithHashAlg::new(
+                Arc::new(key),
+                Some(russh::keys::ssh_key::HashAlg::Sha256),
+            );
             handle.authenticate_publickey(username, kwa).await
         } else if let Some(pwd) = password {
             handle.authenticate_password(username, pwd).await
@@ -124,7 +145,12 @@ impl SftpManager {
             return Err("Authentication failed".into());
         }
 
-        emit_step(app, connect_id, SftpStep::SftpSubsystem, "Requesting SFTP subsystem");
+        emit_step(
+            app,
+            connect_id,
+            SftpStep::SftpSubsystem,
+            "Requesting SFTP subsystem",
+        );
         let channel = handle
             .channel_open_session()
             .await
@@ -164,9 +190,12 @@ impl SftpManager {
                 let result = tokio::time::timeout(
                     Duration::from_secs(3),
                     monitor_handle.channel_open_session(),
-                ).await;
+                )
+                .await;
                 match result {
-                    Ok(Ok(ch)) => { let _ = ch.close().await; }
+                    Ok(Ok(ch)) => {
+                        let _ = ch.close().await;
+                    }
                     _ => {
                         let _ = monitor_app.emit(&format!("sftp-closed-{}", monitor_id), ());
                         break;

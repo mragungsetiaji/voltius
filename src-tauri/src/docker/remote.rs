@@ -1,8 +1,8 @@
-use std::sync::Arc;
 use serde::Deserialize;
+use std::sync::Arc;
+use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncReadExt;
 use tokio::time::{timeout, Duration};
-use tauri::{AppHandle, Emitter};
 
 use super::types::*;
 use crate::ssh::client::SshClient;
@@ -53,7 +53,10 @@ struct RawContainer {
     ports: String,
 }
 
-pub async fn list_containers(handle: &SshHandle, all: bool) -> Result<Vec<DockerContainer>, String> {
+pub async fn list_containers(
+    handle: &SshHandle,
+    all: bool,
+) -> Result<Vec<DockerContainer>, String> {
     let all_flag = if all { " -a" } else { "" };
     let cmd = format!("docker ps{all_flag} --format '{{{{json .}}}}'");
     let output = exec_command(handle, &cmd).await?;
@@ -67,11 +70,7 @@ pub async fn list_containers(handle: &SshHandle, all: bool) -> Result<Vec<Docker
         if let Ok(raw) = serde_json::from_str::<RawContainer>(line) {
             containers.push(DockerContainer {
                 id: raw.id,
-                names: raw
-                    .names
-                    .split(',')
-                    .map(|s| s.trim().to_string())
-                    .collect(),
+                names: raw.names.split(',').map(|s| s.trim().to_string()).collect(),
                 image: raw.image,
                 status: raw.status,
                 state: raw.state,

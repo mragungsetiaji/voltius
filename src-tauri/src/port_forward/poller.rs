@@ -1,5 +1,7 @@
-use crate::port_forward::{ActiveTunnel, PfStatePayload, SessionPfState, TunnelEntry, TunnelOrigin, TunnelState};
 use crate::port_forward::tunnel::create_tunnel;
+use crate::port_forward::{
+    ActiveTunnel, PfStatePayload, SessionPfState, TunnelEntry, TunnelOrigin, TunnelState,
+};
 use crate::ssh::client::SshClient;
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
@@ -142,7 +144,9 @@ async fn poll_ports(handle: Arc<russh::client::Handle<SshClient>>) -> Result<Vec
             Ok(c) => c,
             Err(_) => continue,
         };
-        if channel.exec(true, *cmd).await.is_err() { continue; }
+        if channel.exec(true, *cmd).await.is_err() {
+            continue;
+        }
 
         let mut stream = channel.into_stream();
         let mut output = Vec::new();
@@ -158,11 +162,16 @@ async fn poll_ports(handle: Arc<russh::client::Handle<SshClient>>) -> Result<Vec
         .await
         .is_err();
 
-        if timed_out || output.is_empty() { continue; }
+        if timed_out || output.is_empty() {
+            continue;
+        }
 
         let text = String::from_utf8_lossy(&output);
         let ports = parse_for_cmd(cmd, &text);
-        let filtered: Vec<u16> = ports.into_iter().filter(|p| !IGNORED_PORTS.contains(p)).collect();
+        let filtered: Vec<u16> = ports
+            .into_iter()
+            .filter(|p| !IGNORED_PORTS.contains(p))
+            .collect();
         return Ok(filtered);
     }
     Ok(vec![])
@@ -180,39 +189,53 @@ fn parse_for_cmd(cmd: &str, output: &str) -> Vec<u16> {
 
 fn parse_ss(output: &str) -> Vec<u16> {
     // ss uses: 127.0.0.1:PORT, 0.0.0.0:PORT, *:PORT (any IPv4), [::1]:PORT, [::]:PORT (any IPv6)
-    output.lines().skip(1).filter_map(|line| {
-        line.split_whitespace().find_map(|col| {
-            if col.starts_with("127.0.0.1:")
-                || col.starts_with("0.0.0.0:")
-                || col.starts_with("*:")
-                || col.starts_with("[::1]:")
-                || col.starts_with("[::]:")
-            {
-                col.rsplit_once(':').and_then(|(_, p)| p.parse::<u16>().ok())
-            } else {
-                None
-            }
+    output
+        .lines()
+        .skip(1)
+        .filter_map(|line| {
+            line.split_whitespace().find_map(|col| {
+                if col.starts_with("127.0.0.1:")
+                    || col.starts_with("0.0.0.0:")
+                    || col.starts_with("*:")
+                    || col.starts_with("[::1]:")
+                    || col.starts_with("[::]:")
+                {
+                    col.rsplit_once(':')
+                        .and_then(|(_, p)| p.parse::<u16>().ok())
+                } else {
+                    None
+                }
+            })
         })
-    }).collect()
+        .collect()
 }
 
 fn parse_netstat(output: &str) -> Vec<u16> {
     // Proto Recv-Q Send-Q Local Foreign State PID/Program
     // Local can be: 127.0.0.1:PORT, 0.0.0.0:PORT, :::PORT (IPv6 any)
-    output.lines().filter_map(|line| {
-        let cols: Vec<&str> = line.split_whitespace().collect();
-        if cols.len() < 6 { return None; }
-        if cols[5] != "LISTEN" { return None; }
-        let local = cols[3];
-        if !local.starts_with("127.0.0.1:")
-            && !local.starts_with("0.0.0.0:")
-            && !local.starts_with("::1:")
-            && !local.starts_with(":::")
-        {
-            return None;
-        }
-        local.rsplit_once(':').and_then(|(_, p)| p.parse::<u16>().ok())
-    }).collect()
+    output
+        .lines()
+        .filter_map(|line| {
+            let cols: Vec<&str> = line.split_whitespace().collect();
+            if cols.len() < 6 {
+                return None;
+            }
+            if cols[5] != "LISTEN" {
+                return None;
+            }
+            let local = cols[3];
+            if !local.starts_with("127.0.0.1:")
+                && !local.starts_with("0.0.0.0:")
+                && !local.starts_with("::1:")
+                && !local.starts_with(":::")
+            {
+                return None;
+            }
+            local
+                .rsplit_once(':')
+                .and_then(|(_, p)| p.parse::<u16>().ok())
+        })
+        .collect()
 }
 
 fn parse_proc_net_tcp(output: &str) -> Vec<u16> {
@@ -220,18 +243,27 @@ fn parse_proc_net_tcp(output: &str) -> Vec<u16> {
     // 0A = LISTEN, local_address = HEX_IP:HEX_PORT (little-endian)
     // IPv4: 0100007F = 127.0.0.1, 00000000 = 0.0.0.0
     // IPv6: 00000000000000000000000001000000 = ::1, 00000000000000000000000000000000 = ::
-    output.lines().skip(1).filter_map(|line| {
-        let cols: Vec<&str> = line.split_whitespace().collect();
-        if cols.get(3)? != &"0A" { return None; }
-        let local = cols.get(1)?;
-        let (addr_hex, port_hex) = local.split_once(':')?;
-        let is_local_or_any = matches!(
-            addr_hex,
-            "0100007F" | "00000000"
-                | "00000000000000000000000001000000"
-                | "00000000000000000000000000000000"
-        );
-        if !is_local_or_any { return None; }
-        u16::from_str_radix(port_hex, 16).ok()
-    }).collect()
+    output
+        .lines()
+        .skip(1)
+        .filter_map(|line| {
+            let cols: Vec<&str> = line.split_whitespace().collect();
+            if cols.get(3)? != &"0A" {
+                return None;
+            }
+            let local = cols.get(1)?;
+            let (addr_hex, port_hex) = local.split_once(':')?;
+            let is_local_or_any = matches!(
+                addr_hex,
+                "0100007F"
+                    | "00000000"
+                    | "00000000000000000000000001000000"
+                    | "00000000000000000000000000000000"
+            );
+            if !is_local_or_any {
+                return None;
+            }
+            u16::from_str_radix(port_hex, 16).ok()
+        })
+        .collect()
 }

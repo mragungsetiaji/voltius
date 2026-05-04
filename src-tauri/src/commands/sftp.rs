@@ -1004,8 +1004,12 @@ pub async fn sftp_download_batch_tar(
         let tmp_local = std::env::temp_dir().join(&archive_name);
         let tmp_remote = format!("/tmp/{}", archive_name);
 
-        let remote_parent = remote_paths[0].rfind('/').map(|i| &remote_paths[0][..i]).unwrap_or(".");
-        let basenames: Vec<String> = remote_paths.iter()
+        let remote_parent = remote_paths[0]
+            .rfind('/')
+            .map(|i| &remote_paths[0][..i])
+            .unwrap_or(".");
+        let basenames: Vec<String> = remote_paths
+            .iter()
             .filter_map(|p| p.rfind('/').map(|i| p[i + 1..].to_string()))
             .collect();
 
@@ -1013,24 +1017,32 @@ pub async fn sftp_download_batch_tar(
         let items_quoted: Vec<String> = basenames.iter().map(|b| shell_quote(b)).collect();
         let cmd = format!(
             "tar -czf {arch} -C {parent} {items} 2>&1; echo __TF_EXIT__:$?",
-            arch   = shell_quote(&tmp_remote),
+            arch = shell_quote(&tmp_remote),
             parent = shell_quote(remote_parent),
-            items  = items_quoted.join(" "),
+            items = items_quoted.join(" "),
         );
         sftp_state.exec_command(&sftp_id, &cmd).await?;
 
         if token.is_cancelled() {
-            let _ = sftp_state.exec_command(&sftp_id, &format!("rm -f {}", shell_quote(&tmp_remote))).await;
+            let _ = sftp_state
+                .exec_command(&sftp_id, &format!("rm -f {}", shell_quote(&tmp_remote)))
+                .await;
             return Err("Transfer cancelled".into());
         }
 
         // 2. Download archive
         let download_result = sftp_download_inner(
-            &app, Arc::clone(&session),
-            &tmp_remote, tmp_local.to_str().unwrap_or(""),
-            &transfer_id, &token,
-        ).await;
-        let _ = sftp_state.exec_command(&sftp_id, &format!("rm -f {}", shell_quote(&tmp_remote))).await;
+            &app,
+            Arc::clone(&session),
+            &tmp_remote,
+            tmp_local.to_str().unwrap_or(""),
+            &transfer_id,
+            &token,
+        )
+        .await;
+        let _ = sftp_state
+            .exec_command(&sftp_id, &format!("rm -f {}", shell_quote(&tmp_remote)))
+            .await;
         download_result?;
 
         // 3. Extract locally
@@ -1044,11 +1056,14 @@ pub async fn sftp_download_batch_tar(
             .map_err(|e| format!("tar not found: {e}"))?;
         let _ = tokio::fs::remove_file(&tmp_local).await;
         if !extract_out.status.success() {
-            return Err(String::from_utf8_lossy(&extract_out.stderr).trim().to_string());
+            return Err(String::from_utf8_lossy(&extract_out.stderr)
+                .trim()
+                .to_string());
         }
 
         Ok(())
-    }.await;
+    }
+    .await;
 
     sftp_state.finish_transfer(&transfer_id).await;
     result
@@ -1196,8 +1211,14 @@ pub async fn sftp_download_dir_tar(
         let tmp_remote = format!("/tmp/{}", archive_name);
 
         // 1. Archive on remote
-        let remote_parent = remote_path.rfind('/').map(|i| &remote_path[..i]).unwrap_or(".");
-        let remote_basename = remote_path.rfind('/').map(|i| &remote_path[i + 1..]).unwrap_or(&remote_path);
+        let remote_parent = remote_path
+            .rfind('/')
+            .map(|i| &remote_path[..i])
+            .unwrap_or(".");
+        let remote_basename = remote_path
+            .rfind('/')
+            .map(|i| &remote_path[i + 1..])
+            .unwrap_or(&remote_path);
         let cmd = format!(
             "tar -czf {arch} -C {parent} {base} 2>&1; echo __TF_EXIT__:$?",
             arch = shell_quote(&tmp_remote),
@@ -1207,18 +1228,26 @@ pub async fn sftp_download_dir_tar(
         sftp_state.exec_command(&sftp_id, &cmd).await?;
 
         if token.is_cancelled() {
-            let _ = sftp_state.exec_command(&sftp_id, &format!("rm -f {}", shell_quote(&tmp_remote))).await;
+            let _ = sftp_state
+                .exec_command(&sftp_id, &format!("rm -f {}", shell_quote(&tmp_remote)))
+                .await;
             return Err("Transfer cancelled".into());
         }
 
         // 2. Download archive
         let download_result = sftp_download_inner(
-            &app, Arc::clone(&session),
-            &tmp_remote, tmp_local.to_str().unwrap_or(""),
-            &transfer_id, &token,
-        ).await;
+            &app,
+            Arc::clone(&session),
+            &tmp_remote,
+            tmp_local.to_str().unwrap_or(""),
+            &transfer_id,
+            &token,
+        )
+        .await;
         // Clean up remote temp regardless of download result
-        let _ = sftp_state.exec_command(&sftp_id, &format!("rm -f {}", shell_quote(&tmp_remote))).await;
+        let _ = sftp_state
+            .exec_command(&sftp_id, &format!("rm -f {}", shell_quote(&tmp_remote)))
+            .await;
         download_result?;
 
         // 3. Extract locally
@@ -1226,17 +1255,26 @@ pub async fn sftp_download_dir_tar(
             .await
             .map_err(|e| format!("Cannot create local dir: {e}"))?;
         let extract_out = tokio::process::Command::new("tar")
-            .args(["-xzf", tmp_local.to_str().unwrap_or(""), "--strip-components=1", "-C", &local_path])
+            .args([
+                "-xzf",
+                tmp_local.to_str().unwrap_or(""),
+                "--strip-components=1",
+                "-C",
+                &local_path,
+            ])
             .output()
             .await
             .map_err(|e| format!("tar not found: {e}"))?;
         let _ = tokio::fs::remove_file(&tmp_local).await;
         if !extract_out.status.success() {
-            return Err(String::from_utf8_lossy(&extract_out.stderr).trim().to_string());
+            return Err(String::from_utf8_lossy(&extract_out.stderr)
+                .trim()
+                .to_string());
         }
 
         Ok(())
-    }.await;
+    }
+    .await;
 
     sftp_state.finish_transfer(&transfer_id).await;
     result

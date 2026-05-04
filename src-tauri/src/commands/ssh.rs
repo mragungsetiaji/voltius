@@ -1,6 +1,9 @@
 use crate::known_hosts::{KnownHostsStore, PendingConflicts};
 use crate::port_forward::PortForwardManager;
-use crate::ssh::{client::{self, JumpHostConnect}, session::SessionManager};
+use crate::ssh::{
+    client::{self, JumpHostConnect},
+    session::SessionManager,
+};
 use std::sync::Arc;
 use tauri::AppHandle;
 
@@ -45,7 +48,8 @@ pub async fn ssh_connect(
     if let Ok(handle) = state.get_handle(&session_id).await {
         // Auto-activate saved rules matching this connection
         let cid = connection_id.as_deref().unwrap_or("");
-        pf.auto_activate_rules(&session_id, cid, Arc::clone(&handle)).await;
+        pf.auto_activate_rules(&session_id, cid, Arc::clone(&handle))
+            .await;
         // Start port detection poller
         let _ = pf.set_auto_detect(&session_id, true, handle).await;
     }
@@ -130,7 +134,10 @@ pub async fn ssh_exec_command(
     let authenticated = if let Some(key_str) = private_key {
         let key_pair = russh::keys::decode_secret_key(&key_str, None)
             .map_err(|e| format!("Invalid private key: {}", e))?;
-        let key = russh::keys::PrivateKeyWithHashAlg::new(Arc::new(key_pair), Some(russh::keys::ssh_key::HashAlg::Sha256));
+        let key = russh::keys::PrivateKeyWithHashAlg::new(
+            Arc::new(key_pair),
+            Some(russh::keys::ssh_key::HashAlg::Sha256),
+        );
         handle
             .authenticate_publickey(&username, key)
             .await

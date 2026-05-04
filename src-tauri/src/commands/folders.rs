@@ -15,7 +15,11 @@ fn is_alive(deleted_at: &Option<String>, updated_at: &str) -> bool {
 }
 
 fn max_clock(clocks: &HashMap<String, String>, fallback: &str) -> String {
-    clocks.values().max().cloned().unwrap_or_else(|| fallback.to_string())
+    clocks
+        .values()
+        .max()
+        .cloned()
+        .unwrap_or_else(|| fallback.to_string())
 }
 
 #[tauri::command]
@@ -29,7 +33,10 @@ pub fn folder_list() -> Result<Vec<Folder>, String> {
 
 #[tauri::command]
 pub fn folder_save(data: FolderFormData) -> Result<Folder, String> {
-    let vault_id = data.vault_id.clone().unwrap_or_else(|| "personal".to_string());
+    let vault_id = data
+        .vault_id
+        .clone()
+        .unwrap_or_else(|| "personal".to_string());
     check_vault_write(&[vault_id])?;
     let mut folders = load_folders();
     let now = Utc::now().to_rfc3339();
@@ -62,12 +69,20 @@ pub fn folder_update(id: String, data: FolderFormData) -> Result<Folder, String>
         .find(|f| f.id == id)
         .ok_or_else(|| format!("Folder {} not found", id))?;
     // Effective vault: new one if provided (vault move), otherwise keep existing
-    let effective = data.vault_id.as_deref().unwrap_or(&folder.vault_id).to_string();
+    let effective = data
+        .vault_id
+        .as_deref()
+        .unwrap_or(&folder.vault_id)
+        .to_string();
     check_vault_write(&[effective])?;
     let now = Utc::now().to_rfc3339();
-    if folder.name != data.name { folder.clocks.insert("name".to_string(), now.clone()); }
+    if folder.name != data.name {
+        folder.clocks.insert("name".to_string(), now.clone());
+    }
     if folder.parent_folder_id != data.parent_folder_id {
-        folder.clocks.insert("parent_folder_id".to_string(), now.clone());
+        folder
+            .clocks
+            .insert("parent_folder_id".to_string(), now.clone());
     }
     let new_vault_id = data.vault_id.unwrap_or_else(|| "personal".to_string());
     if folder.vault_id != new_vault_id {
@@ -113,8 +128,16 @@ pub fn folder_move_objects(
     match object_type.as_str() {
         "connection" => {
             let mut connections = load_connections();
-            let affected: Vec<_> = connections.iter().filter(|c| object_ids.contains(&c.id)).collect();
-            let vaults: Vec<String> = affected.iter().map(|c| c.vault_id.clone()).collect::<std::collections::HashSet<_>>().into_iter().collect();
+            let affected: Vec<_> = connections
+                .iter()
+                .filter(|c| object_ids.contains(&c.id))
+                .collect();
+            let vaults: Vec<String> = affected
+                .iter()
+                .map(|c| c.vault_id.clone())
+                .collect::<std::collections::HashSet<_>>()
+                .into_iter()
+                .collect();
             check_vault_write(&vaults)?;
             for c in connections.iter_mut() {
                 if object_ids.contains(&c.id) {
@@ -127,8 +150,16 @@ pub fn folder_move_objects(
         }
         "identity" => {
             let mut identities = load_identities();
-            let affected: Vec<_> = identities.iter().filter(|i| object_ids.contains(&i.id)).collect();
-            let vaults: Vec<String> = affected.iter().map(|i| i.vault_id.clone()).collect::<std::collections::HashSet<_>>().into_iter().collect();
+            let affected: Vec<_> = identities
+                .iter()
+                .filter(|i| object_ids.contains(&i.id))
+                .collect();
+            let vaults: Vec<String> = affected
+                .iter()
+                .map(|i| i.vault_id.clone())
+                .collect::<std::collections::HashSet<_>>()
+                .into_iter()
+                .collect();
             check_vault_write(&vaults)?;
             for i in identities.iter_mut() {
                 if object_ids.contains(&i.id) {
@@ -142,7 +173,12 @@ pub fn folder_move_objects(
         "key" => {
             let mut keys = load_keys();
             let affected: Vec<_> = keys.iter().filter(|k| object_ids.contains(&k.id)).collect();
-            let vaults: Vec<String> = affected.iter().map(|k| k.vault_id.clone()).collect::<std::collections::HashSet<_>>().into_iter().collect();
+            let vaults: Vec<String> = affected
+                .iter()
+                .map(|k| k.vault_id.clone())
+                .collect::<std::collections::HashSet<_>>()
+                .into_iter()
+                .collect();
             check_vault_write(&vaults)?;
             for k in keys.iter_mut() {
                 if object_ids.contains(&k.id) {

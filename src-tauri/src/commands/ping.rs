@@ -1,5 +1,5 @@
 use crate::known_hosts::KnownHostsStore;
-use crate::ssh::client::{JumpHostConnect, SshClient, authenticate_handle};
+use crate::ssh::client::{authenticate_handle, JumpHostConnect, SshClient};
 use russh::client;
 use std::sync::Arc;
 use std::time::Duration;
@@ -52,14 +52,26 @@ async fn ping_via_chain(
 
     // Connect + auth through the first jump host
     let first = &jump_hosts[0];
-    let (first_client, _) = SshClient::new(first.host.clone(), first.port, Arc::clone(&known_hosts));
-    let mut current = match client::connect(Arc::clone(&config), (first.host.as_str(), first.port), first_client).await {
+    let (first_client, _) =
+        SshClient::new(first.host.clone(), first.port, Arc::clone(&known_hosts));
+    let mut current = match client::connect(
+        Arc::clone(&config),
+        (first.host.as_str(), first.port),
+        first_client,
+    )
+    .await
+    {
         Ok(h) => h,
         Err(_) => return false,
     };
-    if authenticate_handle(&mut current, &first.username, first.password.as_deref(), first.private_key.as_deref())
-        .await
-        .is_err()
+    if authenticate_handle(
+        &mut current,
+        &first.username,
+        first.password.as_deref(),
+        first.private_key.as_deref(),
+    )
+    .await
+    .is_err()
     {
         return false;
     }
@@ -73,14 +85,23 @@ async fn ping_via_chain(
             Ok(c) => c,
             Err(_) => return false,
         };
-        let (next_client, _) = SshClient::new(jump.host.clone(), jump.port, Arc::clone(&known_hosts));
-        let mut next = match client::connect_stream(Arc::clone(&config), channel.into_stream(), next_client).await {
-            Ok(h) => h,
-            Err(_) => return false,
-        };
-        if authenticate_handle(&mut next, &jump.username, jump.password.as_deref(), jump.private_key.as_deref())
-            .await
-            .is_err()
+        let (next_client, _) =
+            SshClient::new(jump.host.clone(), jump.port, Arc::clone(&known_hosts));
+        let mut next =
+            match client::connect_stream(Arc::clone(&config), channel.into_stream(), next_client)
+                .await
+            {
+                Ok(h) => h,
+                Err(_) => return false,
+            };
+        if authenticate_handle(
+            &mut next,
+            &jump.username,
+            jump.password.as_deref(),
+            jump.private_key.as_deref(),
+        )
+        .await
+        .is_err()
         {
             return false;
         }

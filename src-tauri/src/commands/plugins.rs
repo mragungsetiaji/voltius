@@ -1,6 +1,6 @@
 use crate::storage::config::config_dir;
-use std::path::PathBuf;
 use reqwest;
+use std::path::PathBuf;
 
 fn plugins_dir() -> PathBuf {
     let dir = config_dir().join("plugins");

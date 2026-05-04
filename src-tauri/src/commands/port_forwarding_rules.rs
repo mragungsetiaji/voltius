@@ -1,6 +1,6 @@
 use crate::storage::config::{
-    load_port_forwarding_rules, save_port_forwarding_rules,
-    PortForwardingRule, PortForwardingRuleFormData,
+    load_port_forwarding_rules, save_port_forwarding_rules, PortForwardingRule,
+    PortForwardingRuleFormData,
 };
 use crate::vault_auth::check_vault_write;
 use chrono::Utc;
@@ -15,7 +15,11 @@ fn is_alive(deleted_at: &Option<String>, updated_at: &str) -> bool {
 }
 
 fn max_clock(clocks: &HashMap<String, String>, fallback: &str) -> String {
-    clocks.values().max().cloned().unwrap_or_else(|| fallback.to_string())
+    clocks
+        .values()
+        .max()
+        .cloned()
+        .unwrap_or_else(|| fallback.to_string())
 }
 
 #[tauri::command]
@@ -62,7 +66,10 @@ pub fn pf_rule_create(data: PortForwardingRuleFormData) -> Result<PortForwarding
 }
 
 #[tauri::command]
-pub fn pf_rule_update(id: String, data: PortForwardingRuleFormData) -> Result<PortForwardingRule, String> {
+pub fn pf_rule_update(
+    id: String,
+    data: PortForwardingRuleFormData,
+) -> Result<PortForwardingRule, String> {
     let mut rules = load_port_forwarding_rules();
     let rule = rules
         .iter_mut()
@@ -70,17 +77,38 @@ pub fn pf_rule_update(id: String, data: PortForwardingRuleFormData) -> Result<Po
         .ok_or_else(|| format!("Rule {} not found", id))?;
 
     let now = Utc::now().to_rfc3339();
-    if rule.name != data.name                   { rule.clocks.insert("name".to_string(), now.clone()); }
-    if rule.local_port != data.local_port       { rule.clocks.insert("local_port".to_string(), now.clone()); }
-    if rule.remote_port != data.remote_port     { rule.clocks.insert("remote_port".to_string(), now.clone()); }
-    if rule.remote_host != data.remote_host     { rule.clocks.insert("remote_host".to_string(), now.clone()); }
-    if rule.description != data.description     { rule.clocks.insert("description".to_string(), now.clone()); }
-    if rule.connection_ids != data.connection_ids { rule.clocks.insert("connection_ids".to_string(), now.clone()); }
-    if rule.folder_id != data.folder_id         { rule.clocks.insert("folder_id".to_string(), now.clone()); }
+    if rule.name != data.name {
+        rule.clocks.insert("name".to_string(), now.clone());
+    }
+    if rule.local_port != data.local_port {
+        rule.clocks.insert("local_port".to_string(), now.clone());
+    }
+    if rule.remote_port != data.remote_port {
+        rule.clocks.insert("remote_port".to_string(), now.clone());
+    }
+    if rule.remote_host != data.remote_host {
+        rule.clocks.insert("remote_host".to_string(), now.clone());
+    }
+    if rule.description != data.description {
+        rule.clocks.insert("description".to_string(), now.clone());
+    }
+    if rule.connection_ids != data.connection_ids {
+        rule.clocks
+            .insert("connection_ids".to_string(), now.clone());
+    }
+    if rule.folder_id != data.folder_id {
+        rule.clocks.insert("folder_id".to_string(), now.clone());
+    }
 
-    let effective_vault = data.vault_id.as_deref().unwrap_or(&rule.vault_id).to_string();
+    let effective_vault = data
+        .vault_id
+        .as_deref()
+        .unwrap_or(&rule.vault_id)
+        .to_string();
     if let Some(ref vid) = data.vault_id {
-        if rule.vault_id != *vid { rule.clocks.insert("vault_id".to_string(), now.clone()); }
+        if rule.vault_id != *vid {
+            rule.clocks.insert("vault_id".to_string(), now.clone());
+        }
     }
     check_vault_write(&[effective_vault])?;
 
@@ -91,7 +119,9 @@ pub fn pf_rule_update(id: String, data: PortForwardingRuleFormData) -> Result<Po
     rule.description = data.description;
     rule.connection_ids = data.connection_ids;
     rule.folder_id = data.folder_id;
-    if let Some(vid) = data.vault_id { rule.vault_id = vid; }
+    if let Some(vid) = data.vault_id {
+        rule.vault_id = vid;
+    }
     rule.deleted_at = None;
     rule.updated_at = max_clock(&rule.clocks, &now);
 

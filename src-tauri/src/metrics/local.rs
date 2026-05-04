@@ -1,5 +1,5 @@
-use sysinfo::{Disks, Networks, System};
 use super::{DiskInfo, MetricsSnapshot};
+use sysinfo::{Disks, Networks, System};
 
 pub struct LocalMetrics {
     sys: System,
@@ -17,7 +17,13 @@ impl LocalMetrics {
         let networks = Networks::new_with_refreshed_list();
         let disks = Disks::new_with_refreshed_list();
         let last_disks = collect_disks(&disks);
-        Self { sys, networks, disks, disk_tick: 0, last_disks }
+        Self {
+            sys,
+            networks,
+            disks,
+            disk_tick: 0,
+            last_disks,
+        }
     }
 
     pub fn snapshot(&mut self) -> MetricsSnapshot {

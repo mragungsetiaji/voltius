@@ -3,9 +3,15 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
-fn default_folder_object_type() -> String { "connection".to_string() }
-fn default_personal() -> String { "personal".to_string() }
-fn default_ssh() -> String { "ssh".to_string() }
+fn default_folder_object_type() -> String {
+    "connection".to_string()
+}
+fn default_personal() -> String {
+    "personal".to_string()
+}
+fn default_ssh() -> String {
+    "ssh".to_string()
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JumpHost {
@@ -279,15 +285,27 @@ pub fn config_dir() -> PathBuf {
     dir
 }
 
-fn connections_file() -> PathBuf  { config_dir().join("connections.json") }
-fn identities_file() -> PathBuf   { config_dir().join("identities.json") }
-fn keys_file() -> PathBuf         { config_dir().join("ssh_keys.json") }
-fn folders_file() -> PathBuf      { config_dir().join("folders.json") }
-pub fn known_hosts_file() -> PathBuf { config_dir().join("known_hosts.json") }
+fn connections_file() -> PathBuf {
+    config_dir().join("connections.json")
+}
+fn identities_file() -> PathBuf {
+    config_dir().join("identities.json")
+}
+fn keys_file() -> PathBuf {
+    config_dir().join("ssh_keys.json")
+}
+fn folders_file() -> PathBuf {
+    config_dir().join("folders.json")
+}
+pub fn known_hosts_file() -> PathBuf {
+    config_dir().join("known_hosts.json")
+}
 
 pub fn load_connections() -> Vec<Connection> {
     let path = connections_file();
-    if !path.exists() { return Vec::new(); }
+    if !path.exists() {
+        return Vec::new();
+    }
     let data = fs::read_to_string(path).unwrap_or_default();
     parse_with_migration(&data)
 }
@@ -299,7 +317,9 @@ pub fn save_connections(connections: &[Connection]) -> Result<(), String> {
 
 pub fn load_identities() -> Vec<Identity> {
     let path = identities_file();
-    if !path.exists() { return Vec::new(); }
+    if !path.exists() {
+        return Vec::new();
+    }
     let data = fs::read_to_string(path).unwrap_or_default();
     parse_with_migration(&data)
 }
@@ -311,7 +331,9 @@ pub fn save_identities(identities: &[Identity]) -> Result<(), String> {
 
 pub fn load_keys() -> Vec<SshKey> {
     let path = keys_file();
-    if !path.exists() { return Vec::new(); }
+    if !path.exists() {
+        return Vec::new();
+    }
     let data = fs::read_to_string(path).unwrap_or_default();
     parse_with_migration(&data)
 }
@@ -323,7 +345,9 @@ pub fn save_keys(keys: &[SshKey]) -> Result<(), String> {
 
 pub fn load_folders() -> Vec<Folder> {
     let path = folders_file();
-    if !path.exists() { return Vec::new(); }
+    if !path.exists() {
+        return Vec::new();
+    }
     let data = fs::read_to_string(path).unwrap_or_default();
     serde_json::from_str(&data).unwrap_or_default()
 }
@@ -354,7 +378,9 @@ pub struct KnownHost {
 
 pub fn load_known_hosts() -> Vec<KnownHost> {
     let path = known_hosts_file();
-    if !path.exists() { return Vec::new(); }
+    if !path.exists() {
+        return Vec::new();
+    }
     let data = fs::read_to_string(path).unwrap_or_default();
     serde_json::from_str(&data).unwrap_or_default()
 }
@@ -413,7 +439,9 @@ pub struct SnippetFormData {
 
 // ─── Port Forwarding Rules ────────────────────────────────────────────────────
 
-fn default_localhost() -> String { "127.0.0.1".to_string() }
+fn default_localhost() -> String {
+    "127.0.0.1".to_string()
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PortForwardingRule {
@@ -455,11 +483,15 @@ pub struct PortForwardingRuleFormData {
     pub vault_id: Option<String>,
 }
 
-fn port_forwarding_rules_file() -> PathBuf { config_dir().join("port_forwarding_rules.json") }
+fn port_forwarding_rules_file() -> PathBuf {
+    config_dir().join("port_forwarding_rules.json")
+}
 
 pub fn load_port_forwarding_rules() -> Vec<PortForwardingRule> {
     let path = port_forwarding_rules_file();
-    if !path.exists() { return Vec::new(); }
+    if !path.exists() {
+        return Vec::new();
+    }
     let data = fs::read_to_string(path).unwrap_or_default();
     parse_with_migration(&data)
 }
@@ -469,11 +501,15 @@ pub fn save_port_forwarding_rules(rules: &[PortForwardingRule]) -> Result<(), St
     fs::write(port_forwarding_rules_file(), data).map_err(|e| e.to_string())
 }
 
-fn snippets_file() -> PathBuf { config_dir().join("snippets.json") }
+fn snippets_file() -> PathBuf {
+    config_dir().join("snippets.json")
+}
 
 pub fn load_snippets() -> Vec<Snippet> {
     let path = snippets_file();
-    if !path.exists() { return Vec::new(); }
+    if !path.exists() {
+        return Vec::new();
+    }
     let data = fs::read_to_string(path).unwrap_or_default();
     parse_with_migration(&data)
 }
@@ -516,11 +552,15 @@ pub struct SnippetFolderFormData {
     pub vault_id: Option<String>,
 }
 
-fn snippet_folders_file() -> PathBuf { config_dir().join("snippet_folders.json") }
+fn snippet_folders_file() -> PathBuf {
+    config_dir().join("snippet_folders.json")
+}
 
 pub fn load_snippet_folders() -> Vec<SnippetFolder> {
     let path = snippet_folders_file();
-    if !path.exists() { return Vec::new(); }
+    if !path.exists() {
+        return Vec::new();
+    }
     let data = fs::read_to_string(path).unwrap_or_default();
     parse_with_migration(&data)
 }

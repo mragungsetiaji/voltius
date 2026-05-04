@@ -1,10 +1,10 @@
 use crate::known_hosts::{
     ConflictAction, HostKeyConflictEvent, HostKeyStatus, KnownHostsStore, PendingConflicts,
 };
-use russh::ChannelMsg;
 use russh::client;
 use russh::keys::ssh_key::{HashAlg, PublicKey};
 use russh::keys::PrivateKeyWithHashAlg;
+use russh::ChannelMsg;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::AppHandle;
@@ -89,7 +89,11 @@ impl SshClient {
                 port,
                 known_hosts,
                 rejection_reason: Arc::clone(&rejection_reason),
-                conflict_ctx: Some(ConflictContext { app, session_id, pending_conflicts }),
+                conflict_ctx: Some(ConflictContext {
+                    app,
+                    session_id,
+                    pending_conflicts,
+                }),
             },
             rejection_reason,
         )
@@ -110,7 +114,9 @@ impl client::Handler for SshClient {
 
             HostKeyStatus::Unknown => {
                 // Trust On First Use: accept and persist.
-                self.known_hosts.add_new(&self.host, self.port, fp, "personal").await;
+                self.known_hosts
+                    .add_new(&self.host, self.port, fp, "personal")
+                    .await;
                 Ok(true)
             }
 
@@ -137,11 +143,15 @@ impl client::Handler for SshClient {
 
                     match rx.await {
                         Ok(ConflictAction::AddNew) => {
-                            self.known_hosts.add_new(&self.host, self.port, fp, "personal").await;
+                            self.known_hosts
+                                .add_new(&self.host, self.port, fp, "personal")
+                                .await;
                             Ok(true)
                         }
                         Ok(ConflictAction::Replace) => {
-                            self.known_hosts.replace_all(&self.host, self.port, fp, "personal").await;
+                            self.known_hosts
+                                .replace_all(&self.host, self.port, fp, "personal")
+                                .await;
                             Ok(true)
                         }
                         _ => {
@@ -343,7 +353,12 @@ pub async fn connect(
         );
         match client::connect(Arc::clone(&config), (host, port), ssh_client).await {
             Ok(h) => {
-                emit_step(&app, &session_id, SshStep::TcpConnected, format!("{}:{}", host, port));
+                emit_step(
+                    &app,
+                    &session_id,
+                    SshStep::TcpConnected,
+                    format!("{}:{}", host, port),
+                );
                 h
             }
             Err(e) => {
@@ -354,22 +369,37 @@ pub async fn connect(
     } else {
         // Connect to the first jump host via TCP
         let first = &jump_hosts[0];
-        let (first_client, rejection_reason) = SshClient::new(
-            first.host.clone(),
-            first.port,
-            Arc::clone(&known_hosts),
-        );
-        let mut current_handle = match client::connect(Arc::clone(&config), (first.host.as_str(), first.port), first_client).await {
+        let (first_client, rejection_reason) =
+            SshClient::new(first.host.clone(), first.port, Arc::clone(&known_hosts));
+        let mut current_handle = match client::connect(
+            Arc::clone(&config),
+            (first.host.as_str(), first.port),
+            first_client,
+        )
+        .await
+        {
             Ok(h) => h,
             Err(e) => {
                 let reason = rejection_reason.lock().await.take();
-                return Err(reason.unwrap_or_else(|| format!("Jump host {} connection failed: {}", first.host, e)));
+                return Err(reason.unwrap_or_else(|| {
+                    format!("Jump host {} connection failed: {}", first.host, e)
+                }));
             }
         };
-        emit_step(&app, &session_id, SshStep::TcpConnected, format!("{}:{} (jump 1)", first.host, first.port));
-        authenticate_handle(&mut current_handle, &first.username, first.password.as_deref(), first.private_key.as_deref())
-            .await
-            .map_err(|e| format!("Jump host {} auth failed: {}", first.host, e))?;
+        emit_step(
+            &app,
+            &session_id,
+            SshStep::TcpConnected,
+            format!("{}:{} (jump 1)", first.host, first.port),
+        );
+        authenticate_handle(
+            &mut current_handle,
+            &first.username,
+            first.password.as_deref(),
+            first.private_key.as_deref(),
+        )
+        .await
+        .map_err(|e| format!("Jump host {} auth failed: {}", first.host, e))?;
 
         // Chain through remaining jump hosts
         for (i, jump) in jump_hosts[1..].iter().enumerate() {
@@ -381,18 +411,29 @@ pub async fn connect(
                 .map_err(|e| format!("Failed to open tunnel to {}: {}", next_host, e))?;
             let stream = channel.into_stream();
 
-            let (next_client, _) = SshClient::new(next_host.to_string(), next_port, Arc::clone(&known_hosts));
+            let (next_client, _) =
+                SshClient::new(next_host.to_string(), next_port, Arc::clone(&known_hosts));
             let mut next_handle = client::connect_stream(Arc::clone(&config), stream, next_client)
                 .await
                 .map_err(|e| format!("Jump host {} SSH handshake failed: {}", next_host, e))?;
 
-            authenticate_handle(&mut next_handle, &jump.username, jump.password.as_deref(), jump.private_key.as_deref())
-                .await
-                .map_err(|e| format!("Jump host {} auth failed: {}", next_host, e))?;
+            authenticate_handle(
+                &mut next_handle,
+                &jump.username,
+                jump.password.as_deref(),
+                jump.private_key.as_deref(),
+            )
+            .await
+            .map_err(|e| format!("Jump host {} auth failed: {}", next_host, e))?;
 
             let prev = std::mem::replace(&mut current_handle, next_handle);
             jump_handles.push(Arc::new(prev));
-            emit_step(&app, &session_id, SshStep::TcpConnected, format!("{}:{} (jump {})", next_host, next_port, i + 2));
+            emit_step(
+                &app,
+                &session_id,
+                SshStep::TcpConnected,
+                format!("{}:{} (jump {})", next_host, next_port, i + 2),
+            );
         }
 
         // Open tunnel from last jump host to the final target
@@ -418,15 +459,30 @@ pub async fn connect(
             })?;
 
         jump_handles.push(Arc::new(current_handle));
-        emit_step(&app, &session_id, SshStep::TcpConnected, format!("{}:{}", host, port));
+        emit_step(
+            &app,
+            &session_id,
+            SshStep::TcpConnected,
+            format!("{}:{}", host, port),
+        );
         h
     };
 
     // Key exchange is done by russh internally during connect()
-    emit_step(&app, &session_id, SshStep::Handshake, "Negotiating encryption");
+    emit_step(
+        &app,
+        &session_id,
+        SshStep::Handshake,
+        "Negotiating encryption",
+    );
 
     // Authentication on the final host
-    emit_step(&app, &session_id, SshStep::Authenticating, format!("as {}", username));
+    emit_step(
+        &app,
+        &session_id,
+        SshStep::Authenticating,
+        format!("as {}", username),
+    );
     authenticate_handle(&mut final_handle, username, password, private_key).await?;
 
     // Open channel + shell

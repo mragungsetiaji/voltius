@@ -4,6 +4,7 @@ import { metricsStart, metricsStop, onMetricsSnapshot } from "@/services/metrics
 import type { DiskInfo, MetricsSnapshot } from "../types";
 import { MetricCard } from "./MetricCard";
 import { DiskSection } from "./DiskSection";
+import { SystemInfoSection } from "./SystemInfoSection";
 
 const MAX_HISTORY = 60;
 
@@ -48,7 +49,7 @@ export function MetricsPanel() {
   }, []);
 
   useEffect(() => {
-    if (!activeSession || activeSession.status !== "connected") {
+    if (!activeSession || activeSession.status !== "connected" || activeSession.type === "serial") {
       stopStream();
       setSnap(null);
       setCpuH([]);
@@ -91,7 +92,7 @@ export function MetricsPanel() {
       stopStream();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSessionId, activeSession?.status]);
+  }, [activeSessionId, activeSession?.status, activeSession?.type]);
 
   if (!activeSession || activeSession.status !== "connected") {
     return (
@@ -111,36 +112,45 @@ export function MetricsPanel() {
         </span>
       </div>
 
-      <MetricCard
-        label="CPU"
-        value={snap ? `${snap.cpu_percent.toFixed(1)}%` : "—"}
-        color="#ef4444"
-        history={cpuH}
-      />
-      <MetricCard
-        label="RAM"
-        value={
-          snap
-            ? `${fmtMem(snap.mem_used_kb)} / ${fmtMem(snap.mem_total_kb)}`
-            : "—"
-        }
-        color="#22c55e"
-        history={memH}
-      />
-      <MetricCard
-        label="RX"
-        value={fmtBytes(snap?.net_rx_bytes_per_sec ?? 0)}
-        color="#3b82f6"
-        history={rxH}
-      />
-      <MetricCard
-        label="TX"
-        value={fmtBytes(snap?.net_tx_bytes_per_sec ?? 0)}
-        color="#f59e0b"
-        history={txH}
-      />
+      {activeSession.type === "serial" ? (
+        <div className="px-4 py-3 border-b border-[var(--t-border)] text-[11px] text-[var(--t-text-dim)]">
+          Live metrics are not available for serial sessions.
+        </div>
+      ) : (
+        <>
+          <MetricCard
+            label="CPU"
+            value={snap ? `${snap.cpu_percent.toFixed(1)}%` : "—"}
+            color="#ef4444"
+            history={cpuH}
+          />
+          <MetricCard
+            label="RAM"
+            value={
+              snap
+                ? `${fmtMem(snap.mem_used_kb)} / ${fmtMem(snap.mem_total_kb)}`
+                : "—"
+            }
+            color="#22c55e"
+            history={memH}
+          />
+          <MetricCard
+            label="RX"
+            value={fmtBytes(snap?.net_rx_bytes_per_sec ?? 0)}
+            color="#3b82f6"
+            history={rxH}
+          />
+          <MetricCard
+            label="TX"
+            value={fmtBytes(snap?.net_tx_bytes_per_sec ?? 0)}
+            color="#f59e0b"
+            history={txH}
+          />
 
-      {disks.length > 0 && <DiskSection disks={disks} />}
+          {disks.length > 0 && <DiskSection disks={disks} />}
+        </>
+      )}
+      <SystemInfoSection session={activeSession} />
     </div>
   );
 }

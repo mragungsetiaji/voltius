@@ -60,14 +60,18 @@ pub enum ForwardError {
 impl std::fmt::Display for ForwardError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::PortInUse(port, attempts) => write!(f, "Port {port} already in use after {attempts} attempts"),
+            Self::PortInUse(port, attempts) => {
+                write!(f, "Port {port} already in use after {attempts} attempts")
+            }
             Self::Io(e) => write!(f, "IO error: {e}"),
         }
     }
 }
 
 impl From<std::io::Error> for ForwardError {
-    fn from(e: std::io::Error) -> Self { Self::Io(e) }
+    fn from(e: std::io::Error) -> Self {
+        Self::Io(e)
+    }
 }
 
 /// Sent on every state change — tunnels + suppressed ports together.
@@ -105,7 +109,10 @@ impl PortForwardManager {
                 tunnels: s.tunnels.iter().map(snapshot_tunnel).collect(),
                 suppressed_ports: s.suppressed_ports.iter().copied().collect(),
             },
-            None => PfSessionState { tunnels: vec![], suppressed_ports: vec![] },
+            None => PfSessionState {
+                tunnels: vec![],
+                suppressed_ports: vec![],
+            },
         }
     }
 
@@ -119,7 +126,10 @@ impl PortForwardManager {
 
     pub async fn get_auto_detect(&self, session_id: &str) -> bool {
         let sessions = self.sessions.lock().await;
-        sessions.get(session_id).map(|s| s.auto_detect).unwrap_or(false)
+        sessions
+            .get(session_id)
+            .map(|s| s.auto_detect)
+            .unwrap_or(false)
     }
 
     pub async fn set_auto_detect(
@@ -138,7 +148,9 @@ impl PortForwardManager {
                 suppressed_ports: HashSet::new(),
             });
 
-        if enabled == state.auto_detect { return Ok(()); }
+        if enabled == state.auto_detect {
+            return Ok(());
+        }
 
         if let Some(cancel) = state.poller_cancel.take() {
             cancel.cancel();
@@ -165,7 +177,15 @@ impl PortForwardManager {
         handle: Arc<russh::client::Handle<crate::ssh::client::SshClient>>,
         port: u16,
     ) -> Result<ActiveTunnel, ForwardError> {
-        self.open_tunnel(session_id, handle, port, port, "127.0.0.1".into(), TunnelOrigin::Auto).await
+        self.open_tunnel(
+            session_id,
+            handle,
+            port,
+            port,
+            "127.0.0.1".into(),
+            TunnelOrigin::Auto,
+        )
+        .await
     }
 
     pub async fn open_tunnel(
@@ -205,12 +225,14 @@ impl PortForwardManager {
 
         {
             let mut sessions = self.sessions.lock().await;
-            let state = sessions.entry(session_id.to_string()).or_insert_with(|| SessionPfState {
-                tunnels: Vec::new(),
-                auto_detect: false,
-                poller_cancel: None,
-                suppressed_ports: HashSet::new(),
-            });
+            let state = sessions
+                .entry(session_id.to_string())
+                .or_insert_with(|| SessionPfState {
+                    tunnels: Vec::new(),
+                    auto_detect: false,
+                    poller_cancel: None,
+                    suppressed_ports: HashSet::new(),
+                });
             // Un-suppress this port if user is manually re-enabling it
             state.suppressed_ports.remove(&remote_port);
             state.tunnels.push(entry);
@@ -234,7 +256,9 @@ impl PortForwardManager {
 
         // Suppress auto-detected ports so the poller doesn't immediately re-open them
         if matches!(state.tunnels[pos].tunnel.origin, TunnelOrigin::Auto) {
-            state.suppressed_ports.insert(state.tunnels[pos].tunnel.remote_port);
+            state
+                .suppressed_ports
+                .insert(state.tunnels[pos].tunnel.remote_port);
         }
 
         // Drop entry — CancellationToken cancels all bridges
@@ -282,21 +306,28 @@ impl PortForwardManager {
         use crate::storage::config::load_port_forwarding_rules;
         let rules = load_port_forwarding_rules();
         for rule in rules {
-            if rule.deleted_at.is_some() { continue; }
+            if rule.deleted_at.is_some() {
+                continue;
+            }
             // Skip scoped rules that don't include this connection
             if !rule.connection_ids.is_empty()
                 && !rule.connection_ids.contains(&connection_id.to_string())
             {
                 continue;
             }
-            let _ = self.open_tunnel(
-                session_id,
-                Arc::clone(&handle),
-                rule.local_port,
-                rule.remote_port,
-                rule.remote_host.clone(),
-                TunnelOrigin::Rule { rule_id: rule.id, rule_name: rule.name },
-            ).await;
+            let _ = self
+                .open_tunnel(
+                    session_id,
+                    Arc::clone(&handle),
+                    rule.local_port,
+                    rule.remote_port,
+                    rule.remote_host.clone(),
+                    TunnelOrigin::Rule {
+                        rule_id: rule.id,
+                        rule_name: rule.name,
+                    },
+                )
+                .await;
         }
     }
 

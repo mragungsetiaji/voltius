@@ -1,8 +1,8 @@
 use crate::local::session::LocalSessionManager;
 use crate::ssh::session::SessionManager;
 use crate::storage::config::{
-    load_snippet_folders, load_snippets, save_snippet_folders, save_snippets,
-    Snippet, SnippetFolder, SnippetFolderFormData, SnippetFormData,
+    load_snippet_folders, load_snippets, save_snippet_folders, save_snippets, Snippet,
+    SnippetFolder, SnippetFolderFormData, SnippetFormData,
 };
 use crate::vault_auth::check_vault_write;
 use chrono::Utc;
@@ -17,7 +17,11 @@ fn is_alive(deleted_at: &Option<String>, updated_at: &str) -> bool {
 }
 
 fn max_clock(clocks: &HashMap<String, String>, fallback: &str) -> String {
-    clocks.values().max().cloned().unwrap_or_else(|| fallback.to_string())
+    clocks
+        .values()
+        .max()
+        .cloned()
+        .unwrap_or_else(|| fallback.to_string())
 }
 
 #[tauri::command]
@@ -34,8 +38,17 @@ pub fn snippet_create(data: SnippetFormData) -> Result<Snippet, String> {
     let mut snippets = load_snippets();
     let now = Utc::now().to_rfc3339();
     let mut clocks = HashMap::new();
-    for field in &["name", "content", "description", "tags", "folder_id", "favorite",
-                   "only_for_connection_tags", "only_for_distros", "vault_id"] {
+    for field in &[
+        "name",
+        "content",
+        "description",
+        "tags",
+        "folder_id",
+        "favorite",
+        "only_for_connection_tags",
+        "only_for_distros",
+        "vault_id",
+    ] {
         clocks.insert(field.to_string(), now.clone());
     }
     let vault_id = data.vault_id.unwrap_or_else(|| "personal".to_string());
@@ -77,7 +90,9 @@ pub fn snippet_update(id: String, data: SnippetFormData) -> Result<Snippet, Stri
         snippet.clocks.insert("content".to_string(), now.clone());
     }
     if snippet.description != data.description {
-        snippet.clocks.insert("description".to_string(), now.clone());
+        snippet
+            .clocks
+            .insert("description".to_string(), now.clone());
     }
     if snippet.tags != data.tags {
         snippet.clocks.insert("tags".to_string(), now.clone());
@@ -89,17 +104,25 @@ pub fn snippet_update(id: String, data: SnippetFormData) -> Result<Snippet, Stri
         snippet.clocks.insert("favorite".to_string(), now.clone());
     }
     if snippet.only_for_connection_tags != data.only_for_connection_tags {
-        snippet.clocks.insert("only_for_connection_tags".to_string(), now.clone());
+        snippet
+            .clocks
+            .insert("only_for_connection_tags".to_string(), now.clone());
     }
     if snippet.only_for_distros != data.only_for_distros {
-        snippet.clocks.insert("only_for_distros".to_string(), now.clone());
+        snippet
+            .clocks
+            .insert("only_for_distros".to_string(), now.clone());
     }
     if let Some(ref vid) = data.vault_id {
         if snippet.vault_id != *vid {
             snippet.clocks.insert("vault_id".to_string(), now.clone());
         }
     }
-    let effective_vault = data.vault_id.as_deref().unwrap_or(&snippet.vault_id).to_string();
+    let effective_vault = data
+        .vault_id
+        .as_deref()
+        .unwrap_or(&snippet.vault_id)
+        .to_string();
     check_vault_write(&[effective_vault])?;
 
     snippet.name = data.name;
@@ -131,7 +154,9 @@ pub fn snippet_delete(id: String) -> Result<(), String> {
         .ok_or_else(|| format!("Snippet {} not found", id))?;
     check_vault_write(&[snippet.vault_id.clone()])?;
     snippet.deleted_at = Some(now.clone());
-    snippet.clocks.insert("__deleted__".to_string(), now.clone());
+    snippet
+        .clocks
+        .insert("__deleted__".to_string(), now.clone());
     snippet.updated_at = max_clock(&snippet.clocks, &now);
     save_snippets(&snippets)
 }
@@ -148,11 +173,7 @@ pub async fn snippet_inject(
     ssh_state: tauri::State<'_, SessionManager>,
     local_state: tauri::State<'_, LocalSessionManager>,
 ) -> Result<(), String> {
-    let payload = if execute {
-        format!("{text}\n")
-    } else {
-        text
-    };
+    let payload = if execute { format!("{text}\n") } else { text };
     let bytes = payload.into_bytes();
     match session_type.as_str() {
         "ssh" => ssh_state.send_data(&session_id, &bytes).await,
@@ -200,7 +221,10 @@ pub fn snippet_folder_create(data: SnippetFolderFormData) -> Result<SnippetFolde
 }
 
 #[tauri::command]
-pub fn snippet_folder_update(id: String, data: SnippetFolderFormData) -> Result<SnippetFolder, String> {
+pub fn snippet_folder_update(
+    id: String,
+    data: SnippetFolderFormData,
+) -> Result<SnippetFolder, String> {
     let mut folders = load_snippet_folders();
     let folder = folders
         .iter_mut()
@@ -208,10 +232,18 @@ pub fn snippet_folder_update(id: String, data: SnippetFolderFormData) -> Result<
         .ok_or_else(|| format!("SnippetFolder {} not found", id))?;
 
     let now = Utc::now().to_rfc3339();
-    if folder.name != data.name { folder.clocks.insert("name".to_string(), now.clone()); }
-    if folder.parent_id != data.parent_id { folder.clocks.insert("parent_id".to_string(), now.clone()); }
-    if folder.color != data.color { folder.clocks.insert("color".to_string(), now.clone()); }
-    if folder.icon != data.icon { folder.clocks.insert("icon".to_string(), now.clone()); }
+    if folder.name != data.name {
+        folder.clocks.insert("name".to_string(), now.clone());
+    }
+    if folder.parent_id != data.parent_id {
+        folder.clocks.insert("parent_id".to_string(), now.clone());
+    }
+    if folder.color != data.color {
+        folder.clocks.insert("color".to_string(), now.clone());
+    }
+    if folder.icon != data.icon {
+        folder.clocks.insert("icon".to_string(), now.clone());
+    }
 
     folder.name = data.name;
     folder.parent_id = data.parent_id;

@@ -10,7 +10,6 @@
 ///
 /// Roles are cached from the last successful server sync. An admin revoking access takes
 /// effect the next time the JWT expires and a fresh one cannot be obtained.
-
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use keyring::Entry;
 use std::collections::HashMap;
@@ -40,9 +39,10 @@ fn jwt_is_expired(jwt: &str) -> bool {
         0 => segment.to_string(),
         n => format!("{}{}", segment, "=".repeat(4 - n)),
     };
-    let bytes = match URL_SAFE_NO_PAD.decode(segment).or_else(|_| {
-        base64::engine::general_purpose::URL_SAFE.decode(&padded)
-    }) {
+    let bytes = match URL_SAFE_NO_PAD
+        .decode(segment)
+        .or_else(|_| base64::engine::general_purpose::URL_SAFE.decode(&padded))
+    {
         Ok(b) => b,
         Err(_) => return true,
     };
@@ -74,8 +74,7 @@ pub fn check_vault_write(vault_ids: &[String]) -> Result<(), String> {
         return Ok(());
     }
 
-    let roles: HashMap<String, String> =
-        serde_json::from_str(&roles_json).unwrap_or_default();
+    let roles: HashMap<String, String> = serde_json::from_str(&roles_json).unwrap_or_default();
 
     // Which of the requested vault_ids are team vaults?
     let team_ids: Vec<&String> = vault_ids
@@ -91,11 +90,9 @@ pub fn check_vault_write(vault_ids: &[String]) -> Result<(), String> {
     // At least one team vault is involved — require a valid JWT.
     let jwt = keychain_read("jwt").unwrap_or_default();
     if jwt.is_empty() || jwt_is_expired(&jwt) {
-        return Err(
-            "Team vaults require an active server connection. \
+        return Err("Team vaults require an active server connection. \
              Please sign in to continue."
-                .to_string(),
-        );
+            .to_string());
     }
 
     // Check the role for each team vault.

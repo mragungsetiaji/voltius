@@ -128,7 +128,5 @@ pub fn x25519_unwrap_key(
     let key = Key::<Aes256Gcm>::from_slice(shared.as_bytes());
     let cipher = Aes256Gcm::new(key);
 
-    cipher
-        .decrypt(nonce, ciphertext)
-        .map_err(|e| e.to_string())
+    cipher.decrypt(nonce, ciphertext).map_err(|e| e.to_string())
 }

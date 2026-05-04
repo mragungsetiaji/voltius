@@ -67,7 +67,12 @@ async fn bridge(
     bytes: Arc<AtomicU64>,
 ) {
     let ch = match handle
-        .channel_open_direct_tcpip(&remote_host, remote_port as u32, "127.0.0.1", local_port as u32)
+        .channel_open_direct_tcpip(
+            &remote_host,
+            remote_port as u32,
+            "127.0.0.1",
+            local_port as u32,
+        )
         .await
     {
         Ok(c) => c,

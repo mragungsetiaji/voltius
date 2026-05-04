@@ -69,8 +69,7 @@ pub fn config_wipe(app: AppHandle) -> Result<(), String> {
         .map_err(|e| format!("Failed to get app data dir: {e}"))?;
     let secrets = data_dir.join("secrets.enc");
     if secrets.exists() {
-        std::fs::remove_file(&secrets)
-            .map_err(|e| format!("Failed to delete secrets.enc: {e}"))?;
+        std::fs::remove_file(&secrets).map_err(|e| format!("Failed to delete secrets.enc: {e}"))?;
     }
 
     // Delete config directory (covers all JSON entity files)
@@ -78,8 +77,7 @@ pub fn config_wipe(app: AppHandle) -> Result<(), String> {
         .unwrap_or_else(|| std::path::PathBuf::from("."))
         .join("voltius");
     if config.exists() {
-        std::fs::remove_dir_all(&config)
-            .map_err(|e| format!("Failed to wipe config: {e}"))?;
+        std::fs::remove_dir_all(&config).map_err(|e| format!("Failed to wipe config: {e}"))?;
     }
     Ok(())
 }

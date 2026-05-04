@@ -13,7 +13,11 @@ fn is_alive(deleted_at: &Option<String>, updated_at: &str) -> bool {
 
 /// Returns the max value among all clocks, falling back to `fallback` if empty.
 fn max_clock(clocks: &HashMap<String, String>, fallback: &str) -> String {
-    clocks.values().max().cloned().unwrap_or_else(|| fallback.to_string())
+    clocks
+        .values()
+        .max()
+        .cloned()
+        .unwrap_or_else(|| fallback.to_string())
 }
 
 #[tauri::command]
@@ -100,41 +104,97 @@ pub fn connection_update(id: String, data: ConnectionFormData) -> Result<Connect
         .ok_or_else(|| format!("Connection {} not found", id))?;
 
     let now = Utc::now().to_rfc3339();
-    if conn.name != data.name         { conn.clocks.insert("name".to_string(),       now.clone()); }
-    if conn.host != data.host         { conn.clocks.insert("host".to_string(),       now.clone()); }
-    if conn.port != data.port         { conn.clocks.insert("port".to_string(),       now.clone()); }
-    if conn.username != data.username { conn.clocks.insert("username".to_string(),   now.clone()); }
-    if conn.auth_type != data.auth_type { conn.clocks.insert("auth_type".to_string(), now.clone()); }
-    if conn.tags != data.tags         { conn.clocks.insert("tags".to_string(),       now.clone()); }
-    if conn.identity_id != data.identity_id { conn.clocks.insert("identity_id".to_string(), now.clone()); }
-    if conn.folder_id != data.folder_id { conn.clocks.insert("folder_id".to_string(), now.clone()); }
+    if conn.name != data.name {
+        conn.clocks.insert("name".to_string(), now.clone());
+    }
+    if conn.host != data.host {
+        conn.clocks.insert("host".to_string(), now.clone());
+    }
+    if conn.port != data.port {
+        conn.clocks.insert("port".to_string(), now.clone());
+    }
+    if conn.username != data.username {
+        conn.clocks.insert("username".to_string(), now.clone());
+    }
+    if conn.auth_type != data.auth_type {
+        conn.clocks.insert("auth_type".to_string(), now.clone());
+    }
+    if conn.tags != data.tags {
+        conn.clocks.insert("tags".to_string(), now.clone());
+    }
+    if conn.identity_id != data.identity_id {
+        conn.clocks.insert("identity_id".to_string(), now.clone());
+    }
+    if conn.folder_id != data.folder_id {
+        conn.clocks.insert("folder_id".to_string(), now.clone());
+    }
     {
         let old_ids: Vec<_> = conn.jump_hosts.iter().map(|j| j.id.as_str()).collect();
         let new_ids: Vec<_> = data.jump_hosts.iter().map(|j| j.id.as_str()).collect();
-        if old_ids != new_ids { conn.clocks.insert("jump_hosts".to_string(), now.clone()); }
+        if old_ids != new_ids {
+            conn.clocks.insert("jump_hosts".to_string(), now.clone());
+        }
     }
     {
         let old_ids: Vec<_> = conn.env_vars.iter().map(|e| e.id.as_str()).collect();
         let new_ids: Vec<_> = data.env_vars.iter().map(|e| e.id.as_str()).collect();
-        if old_ids != new_ids { conn.clocks.insert("env_vars".to_string(), now.clone()); }
+        if old_ids != new_ids {
+            conn.clocks.insert("env_vars".to_string(), now.clone());
+        }
     }
-    if conn.agent_forwarding != data.agent_forwarding { conn.clocks.insert("agent_forwarding".to_string(), now.clone()); }
-    if conn.pre_command != data.pre_command { conn.clocks.insert("pre_command".to_string(), now.clone()); }
-    if conn.post_command != data.post_command { conn.clocks.insert("post_command".to_string(), now.clone()); }
-    if conn.terminal_encoding != data.terminal_encoding { conn.clocks.insert("terminal_encoding".to_string(), now.clone()); }
-    if conn.ping_disabled != data.ping_disabled { conn.clocks.insert("ping_disabled".to_string(), now.clone()); }
-    if conn.connection_type != data.connection_type { conn.clocks.insert("connection_type".to_string(), now.clone()); }
-    if conn.serial_port != data.serial_port { conn.clocks.insert("serial_port".to_string(), now.clone()); }
-    if conn.serial_baud != data.serial_baud { conn.clocks.insert("serial_baud".to_string(), now.clone()); }
-    if conn.serial_data_bits != data.serial_data_bits { conn.clocks.insert("serial_data_bits".to_string(), now.clone()); }
-    if conn.serial_parity != data.serial_parity { conn.clocks.insert("serial_parity".to_string(), now.clone()); }
-    if conn.serial_stop_bits != data.serial_stop_bits { conn.clocks.insert("serial_stop_bits".to_string(), now.clone()); }
-    if conn.serial_flow_control != data.serial_flow_control { conn.clocks.insert("serial_flow_control".to_string(), now.clone()); }
+    if conn.agent_forwarding != data.agent_forwarding {
+        conn.clocks
+            .insert("agent_forwarding".to_string(), now.clone());
+    }
+    if conn.pre_command != data.pre_command {
+        conn.clocks.insert("pre_command".to_string(), now.clone());
+    }
+    if conn.post_command != data.post_command {
+        conn.clocks.insert("post_command".to_string(), now.clone());
+    }
+    if conn.terminal_encoding != data.terminal_encoding {
+        conn.clocks
+            .insert("terminal_encoding".to_string(), now.clone());
+    }
+    if conn.ping_disabled != data.ping_disabled {
+        conn.clocks.insert("ping_disabled".to_string(), now.clone());
+    }
+    if conn.connection_type != data.connection_type {
+        conn.clocks
+            .insert("connection_type".to_string(), now.clone());
+    }
+    if conn.serial_port != data.serial_port {
+        conn.clocks.insert("serial_port".to_string(), now.clone());
+    }
+    if conn.serial_baud != data.serial_baud {
+        conn.clocks.insert("serial_baud".to_string(), now.clone());
+    }
+    if conn.serial_data_bits != data.serial_data_bits {
+        conn.clocks
+            .insert("serial_data_bits".to_string(), now.clone());
+    }
+    if conn.serial_parity != data.serial_parity {
+        conn.clocks.insert("serial_parity".to_string(), now.clone());
+    }
+    if conn.serial_stop_bits != data.serial_stop_bits {
+        conn.clocks
+            .insert("serial_stop_bits".to_string(), now.clone());
+    }
+    if conn.serial_flow_control != data.serial_flow_control {
+        conn.clocks
+            .insert("serial_flow_control".to_string(), now.clone());
+    }
 
     // Effective vault: use new one if provided, otherwise keep existing
-    let effective_vault = data.vault_id.as_deref().unwrap_or(&conn.vault_id).to_string();
+    let effective_vault = data
+        .vault_id
+        .as_deref()
+        .unwrap_or(&conn.vault_id)
+        .to_string();
     if let Some(ref vid) = data.vault_id {
-        if conn.vault_id != *vid { conn.clocks.insert("vault_id".to_string(), now.clone()); }
+        if conn.vault_id != *vid {
+            conn.clocks.insert("vault_id".to_string(), now.clone());
+        }
     }
     check_vault_write(&[effective_vault])?;
 
@@ -161,7 +221,9 @@ pub fn connection_update(id: String, data: ConnectionFormData) -> Result<Connect
     conn.serial_parity = data.serial_parity;
     conn.serial_stop_bits = data.serial_stop_bits;
     conn.serial_flow_control = data.serial_flow_control;
-    if let Some(vid) = data.vault_id { conn.vault_id = vid; }
+    if let Some(vid) = data.vault_id {
+        conn.vault_id = vid;
+    }
     conn.deleted_at = None; // revive if somehow updating a tombstone
     conn.updated_at = max_clock(&conn.clocks, &now);
 

@@ -36,12 +36,11 @@ pub async fn derive_keys(password: String, account_id: String) -> Result<DeriveK
 #[tauri::command]
 pub async fn derive_gist_key(passphrase: String, salt_hex: String) -> Result<String, String> {
     let salt = decode_hex(&salt_hex)?;
-    let key =
-        tauri::async_runtime::spawn_blocking(move || {
-            voltius_crypto::derive_enc_key_raw_salt(&passphrase, &salt)
-        })
-        .await
-        .map_err(|e| e.to_string())??;
+    let key = tauri::async_runtime::spawn_blocking(move || {
+        voltius_crypto::derive_enc_key_raw_salt(&passphrase, &salt)
+    })
+    .await
+    .map_err(|e| e.to_string())??;
     Ok(key.iter().map(|b| format!("{b:02x}")).collect())
 }
 

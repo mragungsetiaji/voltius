@@ -162,7 +162,10 @@ pub async fn remove_image(image_id: &str) -> Result<(), String> {
     docker
         .remove_image(
             image_id,
-            Some(RemoveImageOptions { force: true, noprune: false }),
+            Some(RemoveImageOptions {
+                force: true,
+                noprune: false,
+            }),
             None,
         )
         .await
@@ -282,15 +285,18 @@ pub async fn stream_logs(app: AppHandle, stream_id: String, container_id: String
             Ok(output) => {
                 use bollard::container::LogOutput;
                 let (line, stream_name) = match output {
-                    LogOutput::StdOut { message } => {
-                        (String::from_utf8_lossy(&message).trim_end().to_string(), "stdout")
-                    }
-                    LogOutput::StdErr { message } => {
-                        (String::from_utf8_lossy(&message).trim_end().to_string(), "stderr")
-                    }
-                    LogOutput::Console { message } | LogOutput::StdIn { message } => {
-                        (String::from_utf8_lossy(&message).trim_end().to_string(), "stdout")
-                    }
+                    LogOutput::StdOut { message } => (
+                        String::from_utf8_lossy(&message).trim_end().to_string(),
+                        "stdout",
+                    ),
+                    LogOutput::StdErr { message } => (
+                        String::from_utf8_lossy(&message).trim_end().to_string(),
+                        "stderr",
+                    ),
+                    LogOutput::Console { message } | LogOutput::StdIn { message } => (
+                        String::from_utf8_lossy(&message).trim_end().to_string(),
+                        "stdout",
+                    ),
                 };
                 let _ = app.emit(
                     &event,

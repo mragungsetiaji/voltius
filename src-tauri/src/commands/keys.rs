@@ -12,7 +12,11 @@ fn is_alive(deleted_at: &Option<String>, updated_at: &str) -> bool {
 }
 
 fn max_clock(clocks: &HashMap<String, String>, fallback: &str) -> String {
-    clocks.values().max().cloned().unwrap_or_else(|| fallback.to_string())
+    clocks
+        .values()
+        .max()
+        .cloned()
+        .unwrap_or_else(|| fallback.to_string())
 }
 
 #[tauri::command]
@@ -60,13 +64,25 @@ pub fn key_update(id: String, data: SshKeyFormData) -> Result<SshKey, String> {
         .find(|k| k.id == id)
         .ok_or_else(|| format!("Key {} not found", id))?;
     let now = Utc::now().to_rfc3339();
-    if key.name != data.name           { key.clocks.insert("name".to_string(),      now.clone()); }
-    if key.key_type != data.key_type   { key.clocks.insert("key_type".to_string(),  now.clone()); }
-    if key.folder_id != data.folder_id { key.clocks.insert("folder_id".to_string(), now.clone()); }
+    if key.name != data.name {
+        key.clocks.insert("name".to_string(), now.clone());
+    }
+    if key.key_type != data.key_type {
+        key.clocks.insert("key_type".to_string(), now.clone());
+    }
+    if key.folder_id != data.folder_id {
+        key.clocks.insert("folder_id".to_string(), now.clone());
+    }
 
-    let effective_vault = data.vault_id.as_deref().unwrap_or(&key.vault_id).to_string();
+    let effective_vault = data
+        .vault_id
+        .as_deref()
+        .unwrap_or(&key.vault_id)
+        .to_string();
     if let Some(ref vid) = data.vault_id {
-        if key.vault_id != *vid { key.clocks.insert("vault_id".to_string(), now.clone()); }
+        if key.vault_id != *vid {
+            key.clocks.insert("vault_id".to_string(), now.clone());
+        }
     }
     check_vault_write(&[effective_vault])?;
 
@@ -74,7 +90,9 @@ pub fn key_update(id: String, data: SshKeyFormData) -> Result<SshKey, String> {
     key.key_type = data.key_type;
     key.folder_id = data.folder_id;
     key.pinned = data.pinned;
-    if let Some(vid) = data.vault_id { key.vault_id = vid; }
+    if let Some(vid) = data.vault_id {
+        key.vault_id = vid;
+    }
     key.deleted_at = None;
     key.updated_at = max_clock(&key.clocks, &now);
     let updated = key.clone();

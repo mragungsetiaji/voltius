@@ -4,8 +4,7 @@ use tokio::time::{timeout, Duration};
 
 use super::{DiskInfo, MetricsSnapshot};
 
-const METRICS_CMD: &str =
-    "cat /proc/stat | head -1; \
+const METRICS_CMD: &str = "cat /proc/stat | head -1; \
      awk '/MemTotal|MemAvailable/{print}' /proc/meminfo; \
      awk 'NR>2{rx+=$2;tx+=$10}END{printf \"NET %d %d\\n\",rx,tx}' /proc/net/dev; \
      df -P / 2>/dev/null | awk 'NR==2{printf \"DISK %d %d %s\\n\",$2,$3,$6}'";
@@ -91,11 +90,23 @@ impl RemoteMetricsState {
                     self.prev_cpu_idle = idle;
                 }
             } else if line.starts_with("MemTotal:") {
-                mem_total_kb = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                mem_total_kb = line
+                    .split_whitespace()
+                    .nth(1)
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(0);
             } else if line.starts_with("MemAvailable:") {
-                mem_avail_kb = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                mem_avail_kb = line
+                    .split_whitespace()
+                    .nth(1)
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(0);
             } else if line.starts_with("NET ") {
-                let parts: Vec<u64> = line.split_whitespace().skip(1).filter_map(|s| s.parse().ok()).collect();
+                let parts: Vec<u64> = line
+                    .split_whitespace()
+                    .skip(1)
+                    .filter_map(|s| s.parse().ok())
+                    .collect();
                 if parts.len() >= 2 {
                     net_rx_per_sec = parts[0].saturating_sub(self.prev_net_rx);
                     net_tx_per_sec = parts[1].saturating_sub(self.prev_net_tx);

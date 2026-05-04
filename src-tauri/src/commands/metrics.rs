@@ -24,7 +24,9 @@ pub async fn metrics_start(
             let mut state = RemoteMetricsState::new();
             loop {
                 match state.snapshot(&handle).await {
-                    Ok(snap) => { let _ = app.emit(&event, &snap); }
+                    Ok(snap) => {
+                        let _ = app.emit(&event, &snap);
+                    }
                     Err(_) => break,
                 }
                 tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
@@ -43,7 +45,11 @@ pub async fn metrics_start(
         })
     };
 
-    stream_manager.streams.lock().await.insert(stream_id.clone(), join_handle);
+    stream_manager
+        .streams
+        .lock()
+        .await
+        .insert(stream_id.clone(), join_handle);
     Ok(stream_id)
 }
 

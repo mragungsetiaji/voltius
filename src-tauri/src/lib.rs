@@ -369,6 +369,8 @@ pub fn run() {
             commands::port_forwarding_tunnels::pf_tunnel_set_auto,
             commands::metrics::metrics_start,
             commands::metrics::metrics_stop,
+            commands::sysinfo::get_system_info,
+            commands::sysinfo::get_connected_system_info,
             commands::docker::docker_list_containers,
             commands::docker::docker_list_images,
             commands::docker::docker_list_volumes,

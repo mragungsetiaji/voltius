@@ -135,7 +135,10 @@ pub fn fs_delete(path: String) -> Result<(), String> {
 pub fn fs_touch(path: String) -> Result<(), String> {
     if let Some(parent) = std::path::Path::new(&path).parent() {
         if !parent.exists() {
-            return Err(format!("Parent directory does not exist: {}", parent.display()));
+            return Err(format!(
+                "Parent directory does not exist: {}",
+                parent.display()
+            ));
         }
     }
     std::fs::OpenOptions::new()

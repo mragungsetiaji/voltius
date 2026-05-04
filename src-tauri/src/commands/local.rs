@@ -11,10 +11,15 @@ pub struct ShellOption {
 #[cfg(windows)]
 fn find_in_path(name: &str) -> Option<String> {
     let separator = if cfg!(windows) { ';' } else { ':' };
-    std::env::var("PATH").ok()?.split(separator).find_map(|dir| {
-        let candidate = std::path::Path::new(dir).join(name);
-        candidate.exists().then(|| candidate.to_string_lossy().into_owned())
-    })
+    std::env::var("PATH")
+        .ok()?
+        .split(separator)
+        .find_map(|dir| {
+            let candidate = std::path::Path::new(dir).join(name);
+            candidate
+                .exists()
+                .then(|| candidate.to_string_lossy().into_owned())
+        })
 }
 
 #[tauri::command]
@@ -31,23 +36,35 @@ pub fn local_list_shells() -> Vec<ShellOption> {
         let mut found_pwsh = false;
         for p in &pwsh_paths {
             if std::path::Path::new(p).exists() {
-                shells.push(ShellOption { name: "PowerShell 7+".into(), path: p.to_string() });
+                shells.push(ShellOption {
+                    name: "PowerShell 7+".into(),
+                    path: p.to_string(),
+                });
                 found_pwsh = true;
                 break;
             }
         }
         if !found_pwsh {
             if let Some(p) = find_in_path("pwsh.exe") {
-                shells.push(ShellOption { name: "PowerShell 7+".into(), path: p });
+                shells.push(ShellOption {
+                    name: "PowerShell 7+".into(),
+                    path: p,
+                });
             }
         }
 
         // Windows PowerShell (powershell.exe)
         let ps = r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe";
         if std::path::Path::new(ps).exists() {
-            shells.push(ShellOption { name: "Windows PowerShell".into(), path: ps.into() });
+            shells.push(ShellOption {
+                name: "Windows PowerShell".into(),
+                path: ps.into(),
+            });
         } else if let Some(p) = find_in_path("powershell.exe") {
-            shells.push(ShellOption { name: "Windows PowerShell".into(), path: p });
+            shells.push(ShellOption {
+                name: "Windows PowerShell".into(),
+                path: p,
+            });
         }
 
         // Git Bash (common install)
@@ -57,7 +74,10 @@ pub fn local_list_shells() -> Vec<ShellOption> {
         ];
         for p in &git_bash_paths {
             if std::path::Path::new(p).exists() {
-                shells.push(ShellOption { name: "Git Bash".into(), path: p.to_string() });
+                shells.push(ShellOption {
+                    name: "Git Bash".into(),
+                    path: p.to_string(),
+                });
                 break;
             }
         }
@@ -65,19 +85,25 @@ pub fn local_list_shells() -> Vec<ShellOption> {
         // WSL
         let wsl = r"C:\Windows\System32\wsl.exe";
         if std::path::Path::new(wsl).exists() {
-            shells.push(ShellOption { name: "WSL".into(), path: wsl.into() });
+            shells.push(ShellOption {
+                name: "WSL".into(),
+                path: wsl.into(),
+            });
         } else if let Some(p) = find_in_path("wsl.exe") {
-            shells.push(ShellOption { name: "WSL".into(), path: p });
+            shells.push(ShellOption {
+                name: "WSL".into(),
+                path: p,
+            });
         }
 
         // Cygwin
-        let cygwin_paths = [
-            r"C:\cygwin64\bin\bash.exe",
-            r"C:\cygwin\bin\bash.exe",
-        ];
+        let cygwin_paths = [r"C:\cygwin64\bin\bash.exe", r"C:\cygwin\bin\bash.exe"];
         for p in &cygwin_paths {
             if std::path::Path::new(p).exists() {
-                shells.push(ShellOption { name: "Cygwin".into(), path: p.to_string() });
+                shells.push(ShellOption {
+                    name: "Cygwin".into(),
+                    path: p.to_string(),
+                });
                 break;
             }
         }
@@ -92,15 +118,25 @@ pub fn local_list_shells() -> Vec<ShellOption> {
                     r"C:\tools\cmder\vendor\git-for-windows\bin\bash.exe",
                     r"C:\cmder\vendor\git-for-windows\bin\bash.exe",
                 ];
-                common.iter().find(|p| std::path::Path::new(p).exists()).map(|p| p.to_string())
+                common
+                    .iter()
+                    .find(|p| std::path::Path::new(p).exists())
+                    .map(|p| p.to_string())
             });
         if let Some(p) = cmder_bash {
-            shells.push(ShellOption { name: "Cmder".into(), path: p });
+            shells.push(ShellOption {
+                name: "Cmder".into(),
+                path: p,
+            });
         }
 
         // Command Prompt
-        let cmd = std::env::var("COMSPEC").unwrap_or_else(|_| r"C:\Windows\System32\cmd.exe".into());
-        shells.push(ShellOption { name: "Command Prompt".into(), path: cmd });
+        let cmd =
+            std::env::var("COMSPEC").unwrap_or_else(|_| r"C:\Windows\System32\cmd.exe".into());
+        shells.push(ShellOption {
+            name: "Command Prompt".into(),
+            path: cmd,
+        });
     }
 
     #[cfg(not(windows))]
@@ -119,14 +155,23 @@ pub fn local_list_shells() -> Vec<ShellOption> {
         }
 
         // Common shells
-        for path in &["/bin/zsh", "/bin/bash", "/bin/fish", "/usr/bin/fish", "/usr/local/bin/fish"] {
+        for path in &[
+            "/bin/zsh",
+            "/bin/bash",
+            "/bin/fish",
+            "/usr/bin/fish",
+            "/usr/local/bin/fish",
+        ] {
             if std::path::Path::new(path).exists() && seen.insert(path.to_string()) {
                 let name = std::path::Path::new(path)
                     .file_name()
                     .and_then(|n| n.to_str())
                     .unwrap_or("shell")
                     .to_string();
-                shells.push(ShellOption { name, path: path.to_string() });
+                shells.push(ShellOption {
+                    name,
+                    path: path.to_string(),
+                });
             }
         }
     }

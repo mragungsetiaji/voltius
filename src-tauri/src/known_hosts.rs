@@ -1,4 +1,4 @@
-use crate::storage::config::{KnownHost, load_known_hosts, save_known_hosts, config_dir};
+use crate::storage::config::{config_dir, load_known_hosts, save_known_hosts, KnownHost};
 use chrono::Utc;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -78,7 +78,9 @@ impl KnownHostsStore {
                             let host = parts.next().unwrap_or("").to_string();
                             let port: u16 = parts.next().and_then(|p| p.parse().ok()).unwrap_or(22);
                             // Only migrate if not already present
-                            if !entries.iter().any(|e| e.host == host && e.port == port && e.fingerprint == fingerprint) {
+                            if !entries.iter().any(|e| {
+                                e.host == host && e.port == port && e.fingerprint == fingerprint
+                            }) {
                                 entries.push(KnownHost {
                                     id: Uuid::new_v4().to_string(),
                                     host,
@@ -125,7 +127,13 @@ impl KnownHostsStore {
     }
 
     /// Add a new entry (TOFU or "Add as new" conflict resolution).
-    pub async fn add_new(&self, host: &str, port: u16, fingerprint: String, vault_id: &str) -> KnownHost {
+    pub async fn add_new(
+        &self,
+        host: &str,
+        port: u16,
+        fingerprint: String,
+        vault_id: &str,
+    ) -> KnownHost {
         let now = Utc::now().to_rfc3339();
         let entry = KnownHost {
             id: Uuid::new_v4().to_string(),
@@ -146,7 +154,13 @@ impl KnownHostsStore {
     }
 
     /// Soft-delete all entries for host:port and add a new one ("Replace" resolution).
-    pub async fn replace_all(&self, host: &str, port: u16, fingerprint: String, vault_id: &str) -> KnownHost {
+    pub async fn replace_all(
+        &self,
+        host: &str,
+        port: u16,
+        fingerprint: String,
+        vault_id: &str,
+    ) -> KnownHost {
         let now = Utc::now().to_rfc3339();
         {
             let mut entries = self.entries.lock().await;
