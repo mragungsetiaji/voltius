@@ -103,16 +103,7 @@ export default function HostCard({
       contextMenuItems={contextMenuItems}
     >
       <div className="relative shrink-0">
-        {isSerial ? (
-          <div
-            className="rounded-lg flex items-center justify-center bg-[var(--t-bg-card-avatar)]"
-            style={{ width: isList ? 28 : 48, height: isList ? 28 : 48 }}
-          >
-            <Icon icon="lucide:ethernet-port" width={isList ? 14 : 22} />
-          </div>
-        ) : (
-          <ConnectionAvatar connection={connection} size={isList ? 28 : 48} />
-        )}
+        <ConnectionAvatar connection={connection} size={isList ? 28 : 48} />
         {showPingDot && (
           <StatusDot
             color={

@@ -53,6 +53,17 @@ export async function sshDetectDistro(sessionId: string): Promise<string> {
   return invoke("ssh_detect_distro", { sessionId });
 }
 
+export interface SystemInfo {
+  pretty_name: string;
+  version_id: string;
+  kernel: string;
+  arch: string;
+}
+
+export async function sshGetSystemInfo(sessionId: string): Promise<SystemInfo> {
+  return invoke("ssh_get_system_info", { sessionId });
+}
+
 export async function sshExecCommand(params: {
   host: string;
   port: number;

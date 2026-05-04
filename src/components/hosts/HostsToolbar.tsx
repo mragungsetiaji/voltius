@@ -63,7 +63,7 @@ export function HomeToolbar({
   const pluginHostMenuItems = useUIContributions("home.toolbar.hostMenu");
 
   const newHostItems = [
-    ...(canCreate && onCreateSerial ? [{ label: "New Serial Host", icon: "lucide:ethernet-port", onClick: onCreateSerial }] : []),
+    ...(canCreate && onCreateSerial ? [{ label: "New Serial Host", icon: "lucide:plug-2", onClick: onCreateSerial }] : []),
     ...(canCreateFolder ? [{ label: "New Folder", icon: "lucide:folder-plus", onClick: onCreateFolder }] : []),
     ...pluginHostMenuItems,
   ];
@@ -109,7 +109,7 @@ export function HomeToolbar({
             type="button"
           >
             {ripplesSerial}
-            <Icon icon="lucide:ethernet-port" width={20} />
+            <Icon icon="lucide:plug-2" width={20} />
             {!compact && "Serial"}
           </button>
 

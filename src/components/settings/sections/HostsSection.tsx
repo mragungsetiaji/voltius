@@ -7,13 +7,22 @@ export default function HostsSection() {
   const setEnabled = useHostPingStore((s) => s.setEnabled);
   const pollIntervalMs = useHostPingStore((s) => s.pollIntervalMs);
   const setPollIntervalMs = useHostPingStore((s) => s.setPollIntervalMs);
+  const activePollIntervalMs = useHostPingStore((s) => s.activePollIntervalMs);
+  const setActivePollIntervalMs = useHostPingStore((s) => s.setActivePollIntervalMs);
 
   const [raw, setRaw] = useState(() => String(pollIntervalMs));
+  const [rawActive, setRawActive] = useState(() => String(activePollIntervalMs));
 
   const commit = (value: string) => {
     const n = parseInt(value, 10);
     if (!isNaN(n) && n >= 1) setPollIntervalMs(n);
     else setRaw(String(pollIntervalMs));
+  };
+
+  const commitActive = (value: string) => {
+    const n = parseInt(value, 10);
+    if (!isNaN(n) && n >= 1) setActivePollIntervalMs(n);
+    else setRawActive(String(activePollIntervalMs));
   };
 
   return (
@@ -34,21 +43,44 @@ export default function HostsSection() {
             <Toggle checked={enabled} onChange={setEnabled} />
           </div>
           {enabled && (
-            <div className="flex items-center justify-between px-4 py-3 gap-4">
-              <p className="text-sm font-medium text-[var(--t-text-primary)]">Poll interval</p>
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="number"
-                  min={1}
-                  value={raw}
-                  onChange={(e) => setRaw(e.target.value)}
-                  onBlur={(e) => commit(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && commit(raw)}
-                  className="w-24 px-2 py-1 rounded text-xs text-right bg-[var(--t-bg-base)] border border-[var(--t-border)] text-[var(--t-text-primary)] focus:outline-none focus:border-[var(--t-tab-active-text)]"
-                />
-                <span className="text-xs text-[var(--t-text-dim)]">ms</span>
+            <>
+              <div className="flex items-center justify-between px-4 py-3 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-[var(--t-text-primary)]">Poll interval</p>
+                  <p className="text-xs mt-0.5 text-[var(--t-text-dim)]">Background check cadence for the hosts page.</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    min={1}
+                    value={raw}
+                    onChange={(e) => setRaw(e.target.value)}
+                    onBlur={(e) => commit(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && commit(raw)}
+                    className="w-24 px-2 py-1 rounded text-xs text-right bg-[var(--t-bg-base)] border border-[var(--t-border)] text-[var(--t-text-primary)] focus:outline-none focus:border-[var(--t-tab-active-text)]"
+                  />
+                  <span className="text-xs text-[var(--t-text-dim)]">ms</span>
+                </div>
               </div>
-            </div>
+              <div className="flex items-center justify-between px-4 py-3 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-[var(--t-text-primary)]">Active session interval</p>
+                  <p className="text-xs mt-0.5 text-[var(--t-text-dim)]">Faster cadence used for the latency chip in the terminal status bar.</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    min={1}
+                    value={rawActive}
+                    onChange={(e) => setRawActive(e.target.value)}
+                    onBlur={(e) => commitActive(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && commitActive(rawActive)}
+                    className="w-24 px-2 py-1 rounded text-xs text-right bg-[var(--t-bg-base)] border border-[var(--t-border)] text-[var(--t-text-primary)] focus:outline-none focus:border-[var(--t-tab-active-text)]"
+                  />
+                  <span className="text-xs text-[var(--t-text-dim)]">ms</span>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>

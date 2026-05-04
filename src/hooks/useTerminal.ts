@@ -18,13 +18,16 @@ interface UseTerminalOptions {
   /** If provided, input is only sent to the process when this returns true. */
   inputGate?: React.RefObject<() => boolean>;
   encoding?: string;
+  onResize?: (cols: number, rows: number) => void;
 }
 
-export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encoding }: UseTerminalOptions) {
+export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encoding, onResize }: UseTerminalOptions) {
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
+  const onResizeRef = useRef(onResize);
+  onResizeRef.current = onResize;
   // Prevents resize/input calls from firing before the Tauri session exists.
   const connectedRef = useRef(sessionType === "local" || sessionType === "serial");
 
@@ -62,6 +65,7 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
         fontSize: activeTheme.terminalFontSize,
         fontFamily: activeTheme.terminalFontFamily,
         theme: activeTheme.terminal,
+        overviewRuler: { width: 4 },
         allowProposedApi: true,
       });
 
@@ -185,6 +189,7 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
       // propagates correct dimensions to the backend PTY (fixes nano/vim size on SSH).
       // Serial connections have no PTY so we skip resize.
       const onResizeDispose = term.onResize(({ cols, rows }) => {
+        onResizeRef.current?.(cols, rows);
         if (!connectedRef.current) return;
         if (sessionType === "local") {
           localResize(sessionId, cols, rows);

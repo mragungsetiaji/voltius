@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useTeamSessionStore } from "@/stores/teamSessionStore";
@@ -10,6 +10,7 @@ import { fetchTeamData } from "@/services/teamVaultSync";
 import TerminalView from "@/components/terminal/Terminal";
 import MultiplayerTerminalView from "@/components/terminal/MultiplayerTerminalView";
 import { MultiplayerBar } from "@/components/terminal/MultiplayerBar";
+import { TerminalStatusBar } from "@/components/terminal/TerminalStatusBar";
 import { useMultiplayerHostBroadcast } from "@/hooks/useMultiplayerHostBroadcast";
 import ConnectionOverlay, { SSH_STEPS, SERIAL_STEPS } from "@/components/terminal/ConnectionOverlay";
 import { useConnectionStore } from "@/stores/connectionStore";
@@ -145,7 +146,7 @@ function HostAwareTerminalView({
   active,
   onClosed,
 }: {
-  session: { id: string; type: string; status: string; encoding?: string };
+  session: TerminalSession;
   active: boolean;
   onClosed: () => void;
 }) {
@@ -159,8 +160,12 @@ function HostAwareTerminalView({
     return mpState.controlHolder === "" || mpState.controlHolder === mpState.myUserId;
   };
 
+  const [dimensions, setDimensions] = useState<{ cols: number; rows: number } | undefined>();
+
   // Map serial to local for terminal rendering (both use raw byte I/O from xterm)
   const terminalType = session.type === "serial" ? "serial" : (session.type as "ssh" | "local");
+
+  const showStatusBar = session.type === "ssh" || session.type === "serial";
 
   return (
     <div className="absolute inset-0 flex flex-col">
@@ -172,9 +177,20 @@ function HostAwareTerminalView({
           onClosed={onClosed}
           inputGate={inputGateRef}
           encoding={session.encoding}
+          onResize={(cols, rows) => setDimensions({ cols, rows })}
         />
       </div>
       {isSharing && <MultiplayerBar localSessionId={session.id} />}
+      {showStatusBar && (
+        <TerminalStatusBar
+          sessionId={session.id}
+          sessionType={session.type as "ssh" | "serial"}
+          connectionId={session.connectionId}
+          serialConfig={session.serialConfig}
+          sessionStatus={session.status}
+          dimensions={dimensions}
+        />
+      )}
     </div>
   );
 }
@@ -213,7 +229,7 @@ function SessionConnectionOverlay({
         errorMessage={session.errorMessage}
         name={session.connectionName}
         subtitle={subtitle}
-        icon="lucide:ethernet-port"
+        icon="lucide:plug-2"
         steps={SERIAL_STEPS}
         stepEventName={`serial-step-${session.id}`}
         conflictEventName=""

@@ -1038,7 +1038,7 @@ export default function HostsPage() {
           onClose={closeBgMenu}
           items={[
             ...(canCreate ? [{ label: "New Host", icon: "lucide:server", onClick: () => { setEditingId(null); setShowForm(true); setShowSerialForm(false); setEditingFolderId(null); } } as const] : []),
-            ...(canCreate ? [{ label: "New Serial Host", icon: "lucide:ethernet-port", onClick: () => { setEditingId(null); setShowSerialForm(true); setShowForm(false); setEditingFolderId(null); } } as const] : []),
+            ...(canCreate ? [{ label: "New Serial Host", icon: "lucide:plug-2", onClick: () => { setEditingId(null); setShowSerialForm(true); setShowForm(false); setEditingFolderId(null); } } as const] : []),
             ...(canCreateFolder ? [{ label: "New Folder", icon: "lucide:folder-plus", onClick: () => void saveFolder({ name: "New Folder", object_type: "connection", parent_folder_id: activeFolderId ?? undefined, vault_id: defaultVaultId }).then((f) => { setShowForm(false); setEditingId(null); setEditingFolderId(f.id); }) } as const] : []),
             ...bgContributions,
           ]}
@@ -1087,7 +1087,7 @@ export default function HostsPage() {
 }
 
 function DraftHostCard({ layout, serial = false }: { layout: "grid" | "list"; serial?: boolean }) {
-  const icon = serial ? "lucide:ethernet-port" : "lucide:server";
+  const icon = serial ? "lucide:plug-2" : "lucide:server";
   const label = serial ? "New Serial Host" : "New Host";
   if (layout === "list") {
     return (

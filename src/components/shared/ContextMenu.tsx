@@ -126,10 +126,15 @@ interface ContextMenuProps {
   items: ContextMenuItem[];
   pos: { x: number; y: number };
   onClose: () => void;
+  direction?: "up" | "down";
 }
 
-export function ContextMenu({ items, pos, onClose }: ContextMenuProps) {
+export function ContextMenu({ items, pos, onClose, direction = "down" }: ContextMenuProps) {
   const uiScale = useUIStore((s) => s.uiScale);
+
+  const placement = direction === "up"
+    ? { bottom: window.innerHeight - pos.y, transformOrigin: "bottom left" }
+    : { top: pos.y, transformOrigin: "top left" };
 
   return createPortal(
     <>
@@ -141,10 +146,9 @@ export function ContextMenu({ items, pos, onClose }: ContextMenuProps) {
         className="fixed z-[100] p-1.5 rounded-xl flex flex-col bg-[var(--t-bg-card)] border border-[var(--t-bg-card-hover)] min-w-[12.667rem]"
         style={{
           left: pos.x,
-          top: pos.y,
           transform: `scale(${uiScale})`,
-          transformOrigin: "top left",
           boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+          ...placement,
         }}
       >
         <MenuItemList items={items} onClose={onClose} />

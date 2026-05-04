@@ -82,6 +82,14 @@ pub async fn ssh_detect_distro(
 }
 
 #[tauri::command]
+pub async fn ssh_get_system_info(
+    state: tauri::State<'_, SessionManager>,
+    session_id: String,
+) -> Result<crate::ssh::session::SystemInfo, String> {
+    state.get_system_info(&session_id).await
+}
+
+#[tauri::command]
 pub async fn ssh_resize(
     state: tauri::State<'_, SessionManager>,
     session_id: String,

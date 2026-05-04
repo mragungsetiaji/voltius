@@ -1,9 +1,18 @@
 use crate::ssh::client::{ConnectedSession, SessionInput};
+use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::io::AsyncReadExt;
 use tokio::sync::Mutex;
 use tokio::time::{timeout, Duration};
+
+#[derive(Debug, Default, Serialize)]
+pub struct SystemInfo {
+    pub pretty_name: String,
+    pub version_id: String,
+    pub kernel: String,
+    pub arch: String,
+}
 
 pub struct SessionManager {
     sessions: Arc<Mutex<HashMap<String, ConnectedSession>>>,
@@ -86,6 +95,55 @@ impl SessionManager {
         }
 
         Ok("linux".to_string())
+    }
+
+    pub async fn get_system_info(&self, id: &str) -> Result<SystemInfo, String> {
+        let handle = {
+            let sessions = self.sessions.lock().await;
+            let session = sessions.get(id).ok_or("Session not found")?;
+            Arc::clone(&session.handle)
+        };
+
+        let channel: russh::Channel<russh::client::Msg> = handle
+            .channel_open_session()
+            .await
+            .map_err(|e| format!("Channel error: {}", e))?;
+
+        channel
+            .exec(true, "grep -E '^(PRETTY_NAME|VERSION_ID)=' /etc/os-release 2>/dev/null; uname -srm 2>/dev/null")
+            .await
+            .map_err(|e| format!("Exec error: {}", e))?;
+
+        let mut stream = channel.into_stream();
+        let mut output = Vec::new();
+
+        let _ = timeout(Duration::from_secs(5), async {
+            let mut buf = [0u8; 4096];
+            loop {
+                match stream.read(&mut buf).await {
+                    Ok(0) | Err(_) => break,
+                    Ok(n) => output.extend_from_slice(&buf[..n]),
+                }
+            }
+        })
+        .await;
+
+        let text = String::from_utf8_lossy(&output);
+        let mut info = SystemInfo::default();
+        for line in text.lines() {
+            if let Some(v) = line.strip_prefix("PRETTY_NAME=") {
+                info.pretty_name = v.trim().trim_matches('"').to_string();
+            } else if let Some(v) = line.strip_prefix("VERSION_ID=") {
+                info.version_id = v.trim().trim_matches('"').to_string();
+            } else if line.starts_with("Linux ") {
+                let parts: Vec<&str> = line.splitn(3, ' ').collect();
+                if parts.len() == 3 {
+                    info.kernel = parts[1].to_string();
+                    info.arch = parts[2].trim().to_string();
+                }
+            }
+        }
+        Ok(info)
     }
 
     pub async fn get_handle(
