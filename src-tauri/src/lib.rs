@@ -110,7 +110,6 @@ fn mac_install_writable(exe_path: &std::path::Path) -> bool {
 }
 
 /// Whether the currently running install can self-update.
-#[allow(dead_code)]
 #[cfg(desktop)]
 fn self_update_capable() -> bool {
     let os = if cfg!(target_os = "linux") {
@@ -136,6 +135,7 @@ enum UpdaterEvent {
     UpToDate,
     Downloading { version: String, progress: u8 },
     Ready { version: String },
+    ExternalUpdate { version: String },
     Error { message: String },
 }
 
@@ -175,6 +175,18 @@ async fn check_for_update(handle: tauri::AppHandle) {
             return;
         }
     };
+
+    // Installs that can't self-update (Linux deb/rpm, macOS from dmg /
+    // translocated, etc.) must not download/install — notify instead.
+    if !self_update_capable() {
+        let _ = handle.emit(
+            "updater-status",
+            UpdaterEvent::ExternalUpdate {
+                version: update.version.clone(),
+            },
+        );
+        return;
+    }
 
     let version = update.version.clone();
     let pending = handle.state::<PendingUpdate>();
