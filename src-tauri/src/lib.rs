@@ -75,15 +75,19 @@ fn classify_install(
         // mount, from a Gatekeeper-translocated path, or when the install
         // location isn't writable.
         Os::Macos => {
-            let p = exe_path.to_string_lossy();
-            if p.starts_with("/Volumes/") || p.contains("AppTranslocation") || !bundle_writable {
+            let p_str = exe_path.to_str().unwrap_or("");
+            if exe_path.starts_with("/Volumes/")
+                || p_str.contains("AppTranslocation")
+                || !bundle_writable
+            {
                 InstallKind::External
             } else {
                 InstallKind::SelfUpdate
             }
         }
-        // Per-user NSIS self-updates; per-machine attempts and surfaces a UAC
-        // failure via the error path. No proactive scope detection here.
+        // Per-user NSIS self-updates. A per-machine install still attempts the
+        // update and surfaces any UAC-elevation failure via the error path;
+        // no proactive install-scope detection here.
         Os::Windows => InstallKind::SelfUpdate,
     }
 }
@@ -656,7 +660,7 @@ mod updater_tests {
             classify_install(
                 Os::Windows,
                 false,
-                Path::new(r"C:\\Program Files\\Voltius\\voltius.exe"),
+                Path::new(r"C:\Program Files\Voltius\voltius.exe"),
                 true
             ),
             InstallKind::SelfUpdate
