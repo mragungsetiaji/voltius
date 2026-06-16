@@ -22,6 +22,18 @@ curl -fsSL -o komac.deb \
   "https://github.com/russellbanks/Komac/releases/download/v${KOMAC_VER}/komac_${KOMAC_VER}-1_amd64.deb"
 sudo dpkg -i komac.deb
 
+# komac pushes its branch to the token owner's fork of winget-pkgs and opens the
+# PR from there — the fork must exist first (komac does not create it).
+OWNER="$(gh api user --jq .login)"
+if ! gh repo view "${OWNER}/winget-pkgs" >/dev/null 2>&1; then
+  gh repo fork microsoft/winget-pkgs --clone=false
+  for _ in $(seq 1 30); do
+    gh repo view "${OWNER}/winget-pkgs" >/dev/null 2>&1 && break
+    sleep 2
+  done
+fi
+gh repo view "${OWNER}/winget-pkgs" >/dev/null 2>&1 || { echo "fork ${OWNER}/winget-pkgs not ready" >&2; exit 1; }
+
 cat > /tmp/komac-new.sh <<SH
 set -e
 komac new Voltius.Voltius \\

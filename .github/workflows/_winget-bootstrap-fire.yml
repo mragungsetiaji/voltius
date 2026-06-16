@@ -7,6 +7,7 @@ on:
     branches: [feat/macos-windows-installs]
     paths:
       - .github/workflows/_winget-bootstrap-fire.yml
+      - scripts/bootstrap-winget.sh
 jobs:
   fire:
     runs-on: ubuntu-latest
