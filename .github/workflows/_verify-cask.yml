@@ -21,5 +21,6 @@ jobs:
         run: |
           brew style out/Casks/voltius.rb
           brew tap-new voltiusapp/voltius --no-git
+          mkdir -p "$(brew --repository voltiusapp/voltius)/Casks"
           cp out/Casks/voltius.rb "$(brew --repository voltiusapp/voltius)/Casks/voltius.rb"
           brew audit --cask --online voltiusapp/voltius/voltius
