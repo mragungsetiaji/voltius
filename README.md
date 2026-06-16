@@ -36,6 +36,41 @@ No account required. Everything below is free, forever.
 
 > Full feature list at [docs.voltius.app](https://docs.voltius.app) *(coming soon)* · **Pro · Teams · Business** — see [voltius.app/#pricing](https://voltius.app/#pricing) for paid plans.
 
+## 📦 Install
+
+### Linux — apt & dnf/yum
+
+One command adds the signed Voltius repository and installs the app:
+
+```bash
+curl -fsSL https://repo.voltius.app/setup.sh | sudo bash
+```
+
+After that, Voltius updates through your normal `sudo apt upgrade` / `sudo dnf upgrade`. Packages are GPG-signed and provided for both `amd64`/`x86_64` and `arm64`/`aarch64`.
+
+<details>
+<summary>Manual setup</summary>
+
+**Debian / Ubuntu**
+```bash
+curl -fsSL https://repo.voltius.app/voltius.gpg | sudo gpg --dearmor -o /usr/share/keyrings/voltius.gpg
+echo "deb [signed-by=/usr/share/keyrings/voltius.gpg] https://repo.voltius.app/deb stable main" | sudo tee /etc/apt/sources.list.d/voltius.list
+sudo apt update && sudo apt install voltius
+```
+
+**Fedora / RHEL**
+```bash
+sudo rpm --import https://repo.voltius.app/voltius.gpg
+sudo curl -fsSL https://repo.voltius.app/voltius.repo -o /etc/yum.repos.d/voltius.repo
+sudo dnf install voltius
+```
+On older dnf, replace the `curl` line with `sudo dnf config-manager --add-repo https://repo.voltius.app/voltius.repo`.
+</details>
+
+### Windows & macOS
+
+Download from [voltius.app/download](https://voltius.app/download).
+
 ## ⚖️ Comparison (WIP)
 
 | Feature | Voltius | Termius | [Reach](https://github.com/alexandrosnt/Reach) | [Termix](https://github.com/Termix-SSH/Termix) | Tabby |
