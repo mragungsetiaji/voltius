@@ -5,7 +5,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { SearchAddon, type ISearchOptions } from "@xterm/addon-search";
-import { open as openUrl } from "@tauri-apps/plugin-shell";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { sshSendInput, sshResize, onSshOutput, onSshClosed } from "@/services/ssh";
 import { localSendInput, localResize, onLocalOutput, onLocalClosed } from "@/services/local";
 import { serialWrite, onSerialOutput, onSerialClosed } from "@/services/serial";
@@ -19,6 +19,7 @@ import { useTerminalCwdStore } from "@/stores/terminalCwdStore";
 import { findLeaf, getPaneSessionIds, useLayoutStore } from "@/stores/layoutStore";
 import { useTeamSessionStore } from "@/stores/teamSessionStore";
 import { useCommandHistoryStore } from "@/stores/commandHistoryStore";
+import { consumeLatchForChar } from "@/stores/modifierLatchStore";
 import { sampleLineDensities, scrollDeltaForRatio, type TerminalMinimapCell, type TerminalMinimapSample } from "@/components/terminal/minimapMath";
 import type { TerminalTheme } from "@/themes/types";
 import type { UnlistenFn } from "@tauri-apps/api/event";
@@ -137,6 +138,9 @@ type CacheEntry = {
   minimap: MinimapState;
   sessionType: "ssh" | "local" | "serial";
   connectedRef: { current: boolean };
+  /** Mirror of the useTerminal `inputGate` so module-level senders (writeToSession)
+   *  honor the same multiplayer control-holder gate as the onData handler. */
+  inputGateRef: { current: (() => boolean) | undefined };
   onClosedRef: { current: (() => void) | undefined };
   onResizeRef: { current: ((cols: number, rows: number) => void) | undefined };
   copyBtnRef: { el: HTMLDivElement | null; timer: ReturnType<typeof setTimeout> | null };
@@ -478,6 +482,39 @@ export function getTerminalDims(sessionId: string): { cols: number; rows: number
   return { cols, rows };
 }
 
+/** Re-fit a session's xterm to its current container (call on viewport/keyboard resize).
+ *  Fast-path complement to the per-container ResizeObserver: fires immediately on the
+ *  caller's frame rather than after the observer's debounce, for snappier keyboard reflow. */
+export function refitSession(sessionId: string): void {
+  const entry = terminalCache.get(sessionId);
+  if (!entry) return;
+  try { entry.fitAddon.fit(); } catch { /* container not laid out yet */ }
+}
+
+/** Programmatically send input to a session's PTY (used by the mobile extra-keys row).
+ *  Mirrors the onData path: honors the multiplayer input gate, respects connected state,
+ *  records history, encodes + sends. Does not replicate the split-pane broadcast branch
+ *  (mobile sends to the active session only). */
+export function writeToSession(sessionId: string, data: string): void {
+  const entry = terminalCache.get(sessionId);
+  if (!entry) return;
+  if (entry.inputGateRef.current && !entry.inputGateRef.current()) return;
+  if (!entry.connectedRef.current) return;
+  const sess = useSessionStore.getState().sessions.find((s) => s.id === sessionId);
+  if (sess) {
+    useCommandHistoryStore.getState().addInput(sessionId, sess.connectionName, sess.connectionId, data);
+  }
+  const bytes = new TextEncoder().encode(data);
+  sendSessionInput(sessionId, entry.sessionType, bytes);
+}
+
+/** Whether the session's xterm is in application-cursor-keys mode (DECCKM).
+ *  Arrows must send ESC O x instead of ESC [ x when set. */
+export function getAppCursorMode(sessionId: string): boolean {
+  const entry = terminalCache.get(sessionId);
+  return entry?.terminal.modes.applicationCursorKeysMode ?? false;
+}
+
 export function getTerminalSearchController(sessionId: string): TerminalSearchController | null {
   const entry = terminalCache.get(sessionId);
   if (!entry) return null;
@@ -578,6 +615,7 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
   useEffect(() => {
     const entry = terminalCache.get(sessionId);
     if (entry) {
+      entry.inputGateRef.current = inputGate?.current;
       entry.onClosedRef.current = onClosed;
       entry.onResizeRef.current = onResize;
     }
@@ -592,6 +630,7 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
       // ── Reuse existing terminal ───────────────────────────────────────────
       if (existing) {
         const { terminal, fitAddon } = existing;
+        existing.inputGateRef.current = inputGate?.current;
         existing.onClosedRef.current = onClosed;
         existing.onResizeRef.current = onResize;
 
@@ -721,6 +760,7 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
         },
         sessionType,
         connectedRef: { current: sessionType === "local" || sessionType === "serial" },
+        inputGateRef: { current: inputGate?.current },
         onClosedRef: { current: onClosed },
         onResizeRef: { current: onResize },
         copyBtnRef: { el: null, timer: null },
@@ -872,6 +912,11 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
       const onDataDispose = term.onData((data) => {
         if (inputGate && !inputGate.current?.()) return;
         if (!entry.connectedRef.current) return;
+
+        // Mobile extra-keys row: apply a latched virtual Ctrl/Alt to this typed char
+        // (e.g. latch Ctrl, type "c" → Ctrl-C). Inert on desktop (latch never armed).
+        const latched = consumeLatchForChar(data);
+        if (latched !== null) data = latched;
 
         const sess = useSessionStore.getState().sessions.find((s) => s.id === sessionId);
         if (sess) {
