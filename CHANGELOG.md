@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-18
+
+### Added
+
+- Voltius for Android — the full app now runs on Android (signed arm64 APK),
+  with the terminal, hosts and folders, snippets, SFTP, Docker/metrics/processes
+  panels, Proxmox, native keychain, and SAF download folders
+- Updater: download banner and external-update status for installs that can't
+  self-update
+- Install options: Homebrew cask, winget, apt/yum package repos, and a client
+  `setup.sh`
+
+### Fixed
+
+- Linux: the keychain now persists via the Secret Service instead of volatile
+  kernel keyutils
+- Updater: surface install errors instead of silently restarting, guard against
+  concurrent update checks, and stop reusing a cross-session disk cache
+
 ## [0.4.0] - 2026-06-12
 
 ### Added
