@@ -67,6 +67,13 @@ windows-registry = "0.6"
 windows-native-keyring-store = "1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
+# Persistent credential store: the Secret Service (gnome-keyring/KWallet) over
+# libdbus. The kernel keyutils store below is volatile (wiped on logout/reboot),
+# which silently drops account_id/master_password and breaks auto-login + unlock
+# on a fresh session. We keep keyutils as a headless/no-daemon fallback.
+# crypto-rust: pure-Rust transport encryption (no system openssl); libdbus is
+# bound dynamically (no `vendored`), matching the system-libsecret approach below.
+dbus-secret-service-keyring-store = { version = "1", features = ["crypto-rust"] }
 linux-keyutils-keyring-store = "1"
 # Termius/keytar stores its master key in the Secret Service (libsecret), not in
 # the kernel keyutils store above; we query it directly to import. We bind the

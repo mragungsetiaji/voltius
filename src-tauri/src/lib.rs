@@ -309,9 +309,26 @@ async fn updater_check(app: tauri::AppHandle) {
 /// branch is active per target; other platforms get a no-op (keychain unavailable).
 fn init_keychain_store() -> keyring_core::Result<()> {
     #[cfg(target_os = "linux")]
-    keyring_core::set_default_store(linux_keyutils_keyring_store::Store::new_with_configuration(
-        &std::collections::HashMap::<&str, &str>::new(),
-    )?);
+    {
+        // Prefer the persistent Secret Service (gnome-keyring/KWallet). The kernel
+        // keyutils store is volatile — credentials vanish on logout/reboot, which
+        // breaks auto-login and leaves the unlock screen unable to find account_id.
+        // Headless/server Linux may have no Secret Service daemon; fall back to the
+        // volatile keyutils store there so the app still runs (no persistence).
+        match dbus_secret_service_keyring_store::Store::new() {
+            Ok(store) => keyring_core::set_default_store(store),
+            Err(e) => {
+                log::warn!(
+                    "Secret Service unavailable ({e}); falling back to volatile keyutils keyring"
+                );
+                keyring_core::set_default_store(
+                    linux_keyutils_keyring_store::Store::new_with_configuration(
+                        &std::collections::HashMap::<&str, &str>::new(),
+                    )?,
+                );
+            }
+        }
+    }
     #[cfg(target_os = "macos")]
     keyring_core::set_default_store(
         apple_native_keyring_store::keychain::Store::new_with_configuration(
