@@ -12,6 +12,7 @@ static CONFIG_DIR_OVERRIDE: OnceLock<PathBuf> = OnceLock::new();
 
 /// Pin the base config directory (e.g. to Tauri's `app_data_dir()` on Android).
 /// Must be called before any storage access; later calls are ignored.
+#[cfg(target_os = "android")]
 pub fn set_config_dir(dir: PathBuf) {
     let _ = CONFIG_DIR_OVERRIDE.set(dir);
 }

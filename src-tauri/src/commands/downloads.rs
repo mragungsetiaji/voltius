@@ -143,6 +143,7 @@ mod android {
 /// tree. `base_name` is the destination name chosen by the user (the remote file/dir name).
 /// For a single file the result is one entry `(base_name, temp_root)`. For a directory the
 /// entries are `base_name/<sub/path>` for every regular file, with `/` separators.
+#[cfg(any(target_os = "android", test))]
 pub fn collect_publish_entries(
     temp_root: &Path,
     base_name: &str,
@@ -168,7 +169,7 @@ pub fn collect_publish_entries(
             } else {
                 let rel = path
                     .strip_prefix(temp_root)
-                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+                    .map_err(std::io::Error::other)?;
                 let rel_str = rel
                     .components()
                     .map(|c| c.as_os_str().to_string_lossy())
