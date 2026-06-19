@@ -32,7 +32,7 @@ export function EditorTabStrip() {
         const label =
           t.kind === "file"
             ? (t.path.split("/").pop() ?? t.path) + (t.dirty ? " ●" : "")
-            : `diff: ${t.left.path.split("/").pop()} ↔ ${t.right.path.split("/").pop()}`;
+            : `diff: ${t.left.path.split("/").pop() ?? t.left.path} ↔ ${t.right.path.split("/").pop() ?? t.right.path}`;
         const active = activeTabId === t.id;
         return (
           <span key={t.id} className="flex items-center gap-0.5">

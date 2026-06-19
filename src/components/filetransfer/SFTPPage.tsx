@@ -409,11 +409,13 @@ export default function SFTPPage() {
     <div className="flex flex-col h-full bg-(--t-bg-base)">
       <EditorTabStrip />
       {activeTab !== null ? (
-        activeTab.kind === "file" ? (
-          <EditorTab doc={activeTab} />
-        ) : (
-          <DiffTab doc={activeTab} />
-        )
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {activeTab.kind === "file" ? (
+            <EditorTab doc={activeTab} />
+          ) : (
+            <DiffTab doc={activeTab} />
+          )}
+        </div>
       ) : null}
       <div className={`flex flex-1 min-h-0 gap-3 p-3${activeTab !== null ? " hidden" : ""}`}>
         <div className="flex-1 min-w-0 rounded-xl overflow-hidden border border-(--t-border)">
