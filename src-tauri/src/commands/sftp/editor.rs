@@ -49,7 +49,13 @@ pub async fn sftp_read_file(
     max_bytes: u64,
 ) -> Result<EditorFile, ReadError> {
     let bytes: Vec<u8> = match get_backend(&sftp_state, &sftp_id).await? {
-        SftpBackend::Docker(d) => d.read_file(&path, max_bytes).await?,
+        SftpBackend::Docker(d) => {
+            let size = d.file_size(&path).await;
+            if size > max_bytes {
+                return Err(ReadError::TooLarge { size, limit: max_bytes });
+            }
+            d.read_file(&path).await?
+        }
         SftpBackend::Real(session) => {
             let sftp = session.lock().await;
             let meta = sftp

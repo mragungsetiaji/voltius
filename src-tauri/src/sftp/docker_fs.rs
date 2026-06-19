@@ -229,7 +229,7 @@ impl DockerFs {
         Ok(())
     }
 
-    async fn file_size(&self, path: &str) -> u64 {
+    pub async fn file_size(&self, path: &str) -> u64 {
         let script = "stat -c %s \"$1\" 2>/dev/null || echo 0";
         self.run(&self.dexec(script, &[path]))
             .await
@@ -238,10 +238,7 @@ impl DockerFs {
             .unwrap_or(0)
     }
 
-    pub async fn read_file(&self, path: &str, max_bytes: u64) -> Result<Vec<u8>, String> {
-        if self.file_size(path).await > max_bytes {
-            return Err(format!("file exceeds limit of {max_bytes} bytes"));
-        }
+    pub async fn read_file(&self, path: &str) -> Result<Vec<u8>, String> {
         let (out, err, code) = self.run(&self.dexec("base64 \"$1\"", &[path])).await?;
         if code != 0 {
             return Err(format!("read failed: {err}"));
