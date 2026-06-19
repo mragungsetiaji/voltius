@@ -165,9 +165,10 @@ jobs:
           uploadUpdaterJson: false
 
   # Experimental Android build — sideload APK, not Play Store. Release-signed
-  # arm64-v8a only (covers ~all modern phones). tauri-action builds the APK and
-  # uploads it to the same draft release; the toolchain + signing are set up here
-  # since tauri-action provides neither.
+  # arm64-v8a only (covers ~all modern phones). tauri-action's `mobile: android`
+  # input is unreleased (default branch only; not in @v0 or any tag), so we don't
+  # rely on it — we set up the toolchain + signing, run `tauri android build`
+  # directly, and upload the APK to the same draft release publish-tauri created.
   publish-android:
     # Runs after publish-tauri so the draft release already exists — avoids two
     # jobs racing to create the same draft.
@@ -233,21 +234,27 @@ jobs:
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/voltius-release.keystore"
           echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/voltius-release.keystore" >> "$GITHUB_ENV"
 
-      - name: Build and Release Android APK
-        uses: tauri-apps/tauri-action@v0
+      # The pinned tauri-action@v0 has no `mobile` input (Android support is
+      # unreleased, default branch only), so it ignored `mobile: android` and ran
+      # `tauri build --apk` — but `--apk` is only valid on `tauri android build`.
+      # Build the signed APK directly and upload it to the draft release.
+      - name: Build Android APK
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        with:
-          tagName: ${{ inputs.tag }}
-          releaseName: 'Voltius ${{ inputs.tag }}'
-          releaseBody: ${{ needs.changelog.outputs.notes }}
-          releaseDraft: true
-          prerelease: false
-          mobile: android
-          args: '--apk --target aarch64'
+        run: pnpm tauri android build --apk --target aarch64
+
+      - name: Upload APK to draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          src="src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk"
+          dest="Voltius_${TAG#v}_aarch64.apk"
+          cp "$src" "$dest"
+          gh release upload "$TAG" "$dest" --clobber -R "$REPO"
 
   # Single-writer assembly of latest.json. Each build job skipped it
   # (uploadUpdaterJson:false) to avoid racing on the shared file; here we
