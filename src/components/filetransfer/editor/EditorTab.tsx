@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
-import { sftpReadFile, sftpWriteFile, type EditorReadError } from "@/services/sftp";
+import { readEditorFile, writeEditorFile, type EditorReadError } from "@/services/sftp";
 import { useSftpSettingsStore } from "@/stores/sftpSettingsStore";
 import { useEditorStore, type EditorDoc } from "@/stores/editorStore";
 import { useThemeStore } from "@/stores/themeStore";
@@ -70,7 +70,7 @@ export function EditorTab({ doc }: { doc: EditorDoc }) {
   const doSave = async (text: string) => {
     setSaving(true);
     try {
-      await sftpWriteFile(doc.sftpId, doc.path, text);
+      await writeEditorFile(doc.sftpId, doc.path, text);
       lastSaved.current = text;
       setDirty(doc.id, false);
       setSaveError(null);
@@ -88,7 +88,7 @@ export function EditorTab({ doc }: { doc: EditorDoc }) {
     setError(null);
     setSaveError(null);
     setLoading(true);
-    sftpReadFile(doc.sftpId, doc.path, maxBytes)
+    readEditorFile(doc.sftpId, doc.path, maxBytes)
       .then((f) => {
         if (cancelled) return;
         setContent(f.content);
@@ -209,7 +209,7 @@ function EditorError({
   error,
 }: {
   error: EditorReadError | string;
-  sftpId: string;
+  sftpId: string | null;
   path: string;
 }) {
   let msg = "Failed to open file.";

@@ -317,6 +317,50 @@ pub async fn fs_extract(archive_path: String, dest_dir: String) -> Result<(), St
     Ok(())
 }
 
+// ── Editor (local) ─────────────────────────────────────────────────────────────
+use crate::commands::sftp::editor::{is_binary, EditorFile, ReadError, SNIFF_BYTES};
+
+#[tauri::command]
+pub async fn fs_read_file(path: String, max_bytes: u64) -> Result<EditorFile, ReadError> {
+    let bytes = tokio::task::spawn_blocking(move || {
+        let meta = std::fs::metadata(&path).map_err(|e| e.to_string())?;
+        if meta.len() > max_bytes {
+            return Err(ReadError::TooLarge {
+                size: meta.len(),
+                limit: max_bytes,
+            });
+        }
+        let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+        if bytes.len() as u64 > max_bytes {
+            return Err(ReadError::TooLarge {
+                size: bytes.len() as u64,
+                limit: max_bytes,
+            });
+        }
+        let sample = &bytes[..bytes.len().min(SNIFF_BYTES)];
+        if is_binary(sample) {
+            return Err(ReadError::Binary);
+        }
+        Ok(bytes)
+    })
+    .await
+    .map_err(|e| ReadError::Io {
+        message: e.to_string(),
+    })??;
+    let size = bytes.len() as u64;
+    Ok(EditorFile {
+        content: String::from_utf8_lossy(&bytes).into_owned(),
+        size,
+    })
+}
+
+#[tauri::command]
+pub async fn fs_write_file(path: String, content: String) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || std::fs::write(&path, content).map_err(|e| e.to_string()))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 pub fn fs_exists_home(path: String) -> Result<bool, String> {
     let home = dirs::home_dir().ok_or("Cannot determine home directory")?;

@@ -182,9 +182,9 @@ export default function PanelSftpSection() {
     : session.connectionName || "remote";
 
   const handleEdit = useCallback((path: string) => {
-    if (panelState?.tag !== "connected" || !panelState.sftpId) return;
+    if (panelState?.tag !== "connected") return;
     useEditorStore.getState().openDoc({
-      sftpId: panelState.sftpId,
+      sftpId: panelState.isLocal ? null : panelState.sftpId,
       path,
       hostLabel: panelHostLabel,
       autoSave: useSftpSettingsStore.getState().editorAutoSave,
@@ -290,7 +290,7 @@ export default function PanelSftpSection() {
             onPanelDownload={panelState.isLocal ? undefined : (files) => void downloadFiles(files)}
             onRegisterMenuOpener={(opener) => setMenuOpener(() => opener)}
             onRegisterViewMenuOpener={(opener) => setViewMenuOpener(() => opener)}
-            onEdit={panelState.isLocal ? undefined : handleEdit}
+            onEdit={handleEdit}
           />
         )}
       </div>

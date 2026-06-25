@@ -37,6 +37,20 @@ describe("editorStore", () => {
     expect(useEditorStore.getState().activeTabId).toBeNull();
   });
 
+  it("opens a local doc with null sftpId, distinct from a remote doc at same path", () => {
+    const local = useEditorStore.getState().openDoc({ sftpId: null, path: "/a", hostLabel: "Local Machine", autoSave: false });
+    const remote = useEditorStore.getState().openDoc({ sftpId: "s1", path: "/a", hostLabel: "h", autoSave: false });
+    expect(local).not.toBe(remote);
+    expect(useEditorStore.getState().tabs).toHaveLength(2);
+  });
+
+  it("dedupes local docs by null sftpId + path", () => {
+    const a = useEditorStore.getState().openDoc({ sftpId: null, path: "/a", hostLabel: "Local Machine", autoSave: false });
+    const b = useEditorStore.getState().openDoc({ sftpId: null, path: "/a", hostLabel: "Local Machine", autoSave: false });
+    expect(a).toBe(b);
+    expect(useEditorStore.getState().tabs).toHaveLength(1);
+  });
+
   it("openDiff creates a diff tab", () => {
     const id = useEditorStore.getState().openDiff(
       { sftpId: "s1", path: "/a", hostLabel: "h1" },

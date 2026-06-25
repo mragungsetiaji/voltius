@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
-import { sftpConnect, sftpClose, sftpCanonicalize, fsHomeDir } from "@/services/sftp";
+import { sftpConnect, sftpClose, sftpCanonicalize, sftpOpen, fsHomeDir } from "@/services/sftp";
 import { resolveConnectionCredentials, resolveJumpHosts } from "@/services/credentials";
 import { resolveKeepalive } from "@/utils/keepalive";
 import { getGlobalKeepalivePreset } from "./connectivitySettingsStore";
@@ -84,7 +84,13 @@ export const usePanelSftpStore = create<PanelSftpStore>((set, get) => ({
 
       const conn = findConnection(session.connectionId);
       if (!conn) {
-        set((s) => ({ sessions: { ...s.sessions, [session.id]: { tag: "error", message: "Connection not found" } } }));
+        // Quick-connect / ad-hoc session: no saved Connection to dial. Ride the
+        // terminal's already-authenticated SSH connection via sftp_open.
+        const sftpId = await sftpOpen(session.id);
+        const cwd = await sftpCanonicalize(sftpId, ".");
+        set((s) => ({
+          sessions: { ...s.sessions, [session.id]: { tag: "connected", sftpId, isLocal: false, cwd, followCwd: true } },
+        }));
         return;
       }
 

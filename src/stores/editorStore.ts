@@ -3,14 +3,14 @@ import { create } from "zustand";
 export interface EditorDoc {
   id: string;
   kind: "file";
-  sftpId: string;
+  sftpId: string | null;
   path: string;
   hostLabel: string;
   dirty: boolean;
   autoSave: boolean;
 }
 export interface DiffSide {
-  sftpId: string;
+  sftpId: string | null;
   path: string;
   hostLabel: string;
 }
@@ -25,7 +25,7 @@ export type EditorTab = EditorDoc | DiffDoc;
 interface EditorState {
   tabs: EditorTab[];
   activeTabId: string | null;
-  openDoc(args: { sftpId: string; path: string; hostLabel: string; autoSave: boolean }): string;
+  openDoc(args: { sftpId: string | null; path: string; hostLabel: string; autoSave: boolean }): string;
   openDiff(left: DiffSide, right: DiffSide): string;
   closeTab(id: string): void;
   setActiveTab(id: string | null): void;

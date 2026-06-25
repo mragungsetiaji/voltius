@@ -415,13 +415,13 @@ export default function SFTPPage() {
   const leftSingleFile  = leftSelected.length  === 1 && !leftSelected[0].isDir  ? leftSelected[0]  : null;
   const rightSingleFile = rightSelected.length === 1 && !rightSelected[0].isDir ? rightSelected[0] : null;
   const canCompare =
-    leftPhase.tag === "connected" && leftPhase.sftpId !== null && !!leftSingleFile &&
-    rightPhase.tag === "connected" && rightPhase.sftpId !== null && !!rightSingleFile;
+    leftPhase.tag === "connected" && !!leftSingleFile &&
+    rightPhase.tag === "connected" && !!rightSingleFile;
   const handleCompare = () => {
     if (!canCompare || leftPhase.tag !== "connected" || rightPhase.tag !== "connected") return;
     useEditorStore.getState().openDiff(
-      { sftpId: leftPhase.sftpId!, path: leftSingleFile!.path, hostLabel: hostLabelFor(leftHost) },
-      { sftpId: rightPhase.sftpId!, path: rightSingleFile!.path, hostLabel: hostLabelFor(rightHost) },
+      { sftpId: leftPhase.sftpId, path: leftSingleFile!.path, hostLabel: hostLabelFor(leftHost) },
+      { sftpId: rightPhase.sftpId, path: rightSingleFile!.path, hostLabel: hostLabelFor(rightHost) },
     );
   };
 

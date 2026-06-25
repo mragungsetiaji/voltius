@@ -539,6 +539,8 @@ pub fn run() {
             commands::fs::fs_write_text_home,
             commands::fs::fs_exists_home,
             commands::fs::fs_stat,
+            commands::fs::fs_read_file,
+            commands::fs::fs_write_file,
             commands::fs::fs_mkdir,
             commands::fs::fs_rename,
             commands::fs::fs_delete,

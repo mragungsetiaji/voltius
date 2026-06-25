@@ -435,3 +435,29 @@ export async function sftpWriteFile(
 ): Promise<void> {
   return invoke("sftp_write_file", { sftpId, path, content });
 }
+
+export async function fsReadFile(path: string, maxBytes: number): Promise<EditorFile> {
+  return invoke("fs_read_file", { path, maxBytes });
+}
+
+export async function fsWriteFile(path: string, content: string): Promise<void> {
+  return invoke("fs_write_file", { path, content });
+}
+
+/** Read a file for the editor through the backend matching the connection kind. */
+export function readEditorFile(
+  sftpId: string | null,
+  path: string,
+  maxBytes: number,
+): Promise<EditorFile> {
+  return sftpId === null ? fsReadFile(path, maxBytes) : sftpReadFile(sftpId, path, maxBytes);
+}
+
+/** Write a file for the editor through the backend matching the connection kind. */
+export function writeEditorFile(
+  sftpId: string | null,
+  path: string,
+  content: string,
+): Promise<void> {
+  return sftpId === null ? fsWriteFile(path, content) : sftpWriteFile(sftpId, path, content);
+}

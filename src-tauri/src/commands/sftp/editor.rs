@@ -38,7 +38,7 @@ pub fn is_binary(sample: &[u8]) -> bool {
     non_text * 100 / sample.len() > 30
 }
 
-const SNIFF_BYTES: usize = 8 * 1024;
+pub const SNIFF_BYTES: usize = 8 * 1024;
 
 #[tauri::command]
 pub async fn sftp_read_file(

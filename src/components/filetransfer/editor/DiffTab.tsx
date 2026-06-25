@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { MergeView } from "@codemirror/merge";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import { sftpReadFile } from "@/services/sftp";
+import { readEditorFile } from "@/services/sftp";
 import { useSftpSettingsStore } from "@/stores/sftpSettingsStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { type DiffDoc } from "@/stores/editorStore";
@@ -22,8 +22,8 @@ export function DiffTab({ doc }: { doc: DiffDoc }) {
     setError(null);
     setReady(null);
     Promise.all([
-      sftpReadFile(doc.left.sftpId, doc.left.path, maxBytes),
-      sftpReadFile(doc.right.sftpId, doc.right.path, maxBytes),
+      readEditorFile(doc.left.sftpId, doc.left.path, maxBytes),
+      readEditorFile(doc.right.sftpId, doc.right.path, maxBytes),
     ])
       .then(([a, b]) => {
         if (!cancelled) setReady({ a: a.content, b: b.content });

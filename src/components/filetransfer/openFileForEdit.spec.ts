@@ -21,9 +21,10 @@ describe("openFileForEdit", () => {
     expect(s.tabs[0].kind === "file" && s.tabs[0].path).toBe("/a.txt");
   });
 
-  it("does not open local files", () => {
-    expect(openFileForEdit(file(), { ...remoteCtx, isLocal: true })).toBe(false);
-    expect(useEditorStore.getState().tabs).toHaveLength(0);
+  it("opens a local file with null sftpId", () => {
+    expect(openFileForEdit(file(), { isLocal: true, sftpId: null, hostLabel: "Local Machine", onEdit: undefined })).toBe(true);
+    const tab = useEditorStore.getState().tabs[0];
+    expect(tab.kind === "file" && tab.sftpId).toBeNull();
   });
 
   it("does not open directories", () => {
@@ -31,7 +32,7 @@ describe("openFileForEdit", () => {
     expect(useEditorStore.getState().tabs).toHaveLength(0);
   });
 
-  it("does not open when there is no sftpId", () => {
+  it("does not open a remote file when there is no sftpId", () => {
     expect(openFileForEdit(file(), { ...remoteCtx, sftpId: null })).toBe(false);
     expect(useEditorStore.getState().tabs).toHaveLength(0);
   });

@@ -463,19 +463,20 @@ export function FilePane({
 }
 
 // ── buildSelectionActions ─────────────────────────────────────────────────────
-// Open a remote, editable (non-directory) file in the CodeMirror editor.
-// Shared by the right-click "Edit" action and double-click. Returns whether
-// the file was openable (local files and directories are not).
+// Open an editable (non-directory) file in the CodeMirror editor — local
+// (sftpId null) or remote. Shared by the right-click "Edit" action and
+// double-click. Returns whether the file was openable (directories are not).
 export function openFileForEdit(
   file: FileEntry,
   ctx: Pick<SelectionActionsCtx, "isLocal" | "sftpId" | "hostLabel" | "onEdit">,
 ): boolean {
-  if (ctx.isLocal || file.isDir || !ctx.sftpId) return false;
+  if (file.isDir) return false;
+  if (!ctx.isLocal && !ctx.sftpId) return false;
   if (ctx.onEdit) {
     ctx.onEdit(file.path);
   } else {
     useEditorStore.getState().openDoc({
-      sftpId: ctx.sftpId,
+      sftpId: ctx.isLocal ? null : ctx.sftpId,
       path: file.path,
       hostLabel: ctx.hostLabel,
       autoSave: useSftpSettingsStore.getState().editorAutoSave,
@@ -515,8 +516,8 @@ function buildSelectionActions(files: FileEntry[], ctx: SelectionActionsCtx): Co
     }
   }
 
-  // Edit (single non-dir remote file only)
-  if (single && !ctx.isLocal && !single.isDir && ctx.sftpId) {
+  // Edit (single non-dir file — local or remote)
+  if (single && !single.isDir && (ctx.isLocal || ctx.sftpId)) {
     items.push({
       label: "Edit",
       icon: "lucide:file-pen",
