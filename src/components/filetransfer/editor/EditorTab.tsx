@@ -8,6 +8,7 @@ import { languageForPath } from "./languageForPath";
 import { shouldHandleSaveKey } from "./editorSaveKey";
 import { cmTheme } from "./cmTheme";
 import { IconBtn } from "@/components/filetransfer/FilePane";
+import { Toggle } from "@/components/shared/Toggle";
 
 export function createDebouncedSaver(
   save: (content: string) => Promise<void>,
@@ -147,18 +148,13 @@ export function EditorTab({ doc }: { doc: EditorDoc }) {
           <span className="shrink-0" style={{ color: "var(--t-accent-warn, #f59e0b)" }}>●</span>
         )}
         {/* Auto-save toggle */}
-        <label
-          className="ml-auto flex items-center gap-1 shrink-0 cursor-pointer select-none"
+        <div
+          className="ml-auto flex items-center gap-2 shrink-0 select-none"
           style={{ color: "var(--t-text-secondary)" }}
         >
-          <input
-            type="checkbox"
-            checked={doc.autoSave}
-            onChange={(e) => setDocAutoSave(doc.id, e.target.checked)}
-            className="cursor-pointer"
-          />
-          Auto-save
-        </label>
+          <span>Auto-save</span>
+          <Toggle checked={doc.autoSave} onChange={(v) => setDocAutoSave(doc.id, v)} />
+        </div>
         {/* Save button — styled like FilePane toolbar buttons */}
         <IconBtn
           icon={saving ? "lucide:loader-circle" : "lucide:save"}
