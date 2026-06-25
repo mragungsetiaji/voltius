@@ -22,3 +22,15 @@
   border: 1px solid var(--t-border);
 }
 .cm-diff-ribbon-btn:hover { background: var(--t-bg-card); border-color: var(--t-accent); }
+
+/* Filler opposite an insertion/deletion: diagonal hatch (VSCode-style) so the
+   empty side reads as "no content here" rather than blank. */
+.cm-mergeView .cm-mergeSpacer {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 4px,
+    color-mix(in srgb, var(--t-text-dim) 16%, transparent) 4px,
+    color-mix(in srgb, var(--t-text-dim) 16%, transparent) 5px
+  );
+}
