@@ -11,6 +11,7 @@ import { sideMeta, type DiffPane } from "./diffSave";
 import { cmTheme } from "./cmTheme";
 import { IconBtn } from "@/components/filetransfer/FilePane";
 import { attachDiffRibbons, type DiffRibbonsHandle } from "./diffRibbons";
+import { activeChunkIndex, nextChunkIndex, prevChunkIndex } from "./diffChunks";
 import "./diffRibbons.css";
 
 export function DiffTab({ doc }: { doc: DiffDoc }) {
@@ -19,6 +20,7 @@ export function DiffTab({ doc }: { doc: DiffDoc }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const mergeRef = useRef<MergeView | null>(null);
   const ribbonsRef = useRef<DiffRibbonsHandle | null>(null);
+  const [nav, setNav] = useState<{ count: number; index: number }>({ count: 0, index: 0 });
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState<{ a: string; b: string } | null>(null);
   const activeThemeId = useThemeStore((s) => s.activeThemeId);
@@ -113,6 +115,10 @@ export function DiffTab({ doc }: { doc: DiffDoc }) {
     const track = (side: DiffPane) =>
       EditorView.updateListener.of((u) => {
         ribbonsRef.current?.remeasure();
+        const tops = ribbonsRef.current?.chunkTops() ?? [];
+        const host = hostRef.current;
+        const mid = host ? host.scrollTop + host.clientHeight / 2 : 0;
+        setNav({ count: tops.length, index: Math.max(0, activeChunkIndex(tops, mid)) });
         if (!u.docChanged) return;
         const text = u.state.doc.toString();
         if (side === "a") {
@@ -137,7 +143,15 @@ export function DiffTab({ doc }: { doc: DiffDoc }) {
     });
     mergeRef.current = view;
     ribbonsRef.current = attachDiffRibbons(view, hostRef.current);
+    const onScroll = () => {
+      const tops = ribbonsRef.current?.chunkTops() ?? [];
+      const host = hostRef.current;
+      const mid = host ? host.scrollTop + host.clientHeight / 2 : 0;
+      setNav(() => ({ count: tops.length, index: Math.max(0, activeChunkIndex(tops, mid)) }));
+    };
+    hostRef.current.addEventListener("scroll", onScroll, { passive: true });
     return () => {
+      hostRef.current?.removeEventListener("scroll", onScroll);
       ribbonsRef.current?.destroy();
       ribbonsRef.current = null;
       view.destroy();
@@ -167,6 +181,32 @@ export function DiffTab({ doc }: { doc: DiffDoc }) {
         style={{ borderColor: "var(--t-border)", background: "var(--t-bg-card)" }}
       >
         <SideControls meta={doc.left} dirty={dirtyA} saving={savingA} onSave={() => void doSave("a")} />
+        <div className="flex-1" />
+        {nav.count > 0 && (
+          <div className="flex shrink-0 items-center gap-1" style={{ color: "var(--t-text-dim)" }}>
+            <IconBtn
+              icon="lucide:chevron-up"
+              title="Previous change"
+              onClick={() => {
+                const host = hostRef.current;
+                const tops = ribbonsRef.current?.chunkTops() ?? [];
+                const i = prevChunkIndex(tops, host ? host.scrollTop : 0);
+                if (i !== null) ribbonsRef.current?.scrollToChunk(i);
+              }}
+            />
+            <span className="tabular-nums">{nav.index + 1} / {nav.count}</span>
+            <IconBtn
+              icon="lucide:chevron-down"
+              title="Next change"
+              onClick={() => {
+                const host = hostRef.current;
+                const tops = ribbonsRef.current?.chunkTops() ?? [];
+                const i = nextChunkIndex(tops, host ? host.scrollTop : 0);
+                if (i !== null) ribbonsRef.current?.scrollToChunk(i);
+              }}
+            />
+          </div>
+        )}
         <div className="flex-1" />
         <SideControls meta={doc.right} dirty={dirtyB} saving={savingB} onSave={() => void doSave("b")} alignEnd />
       </div>
