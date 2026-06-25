@@ -64,7 +64,7 @@ jobs:
     strategy:
       fail-fast: false
       # Builds run concurrently. The shared-file race that forced serialization
-      # is gone: each job sets uploadUpdaterJson:false (below), so no job touches
+      # is gone: each job sets includeUpdaterJson:false (below), so no job touches
       # latest.json. Per-platform installers + .sig files have unique names and
       # never collide. The updater-manifest job assembles latest.json once, after
       # all builds — single writer, no race.
@@ -139,7 +139,7 @@ jobs:
         run: pnpm install
 
       - name: Install sccache
-        uses: mozilla/sccache-action@v0.0.9
+        uses: mozilla/sccache-action@v0.0.10
 
       - name: Build and Release Tauri App
         uses: tauri-apps/tauri-action@v0
@@ -159,10 +159,10 @@ jobs:
           uploadPlainBinary: true
           updaterJsonPreferNsis: true
           # Don't write latest.json here — concurrent jobs would race on the
-          # shared file. The .sig files still upload (uploadUpdaterSignatures
-          # defaults true); the updater-manifest job builds latest.json from
-          # them once all builds finish.
-          uploadUpdaterJson: false
+          # shared file. The .sig files still upload as bundle artifacts; the
+          # updater-manifest job builds latest.json from them once all builds
+          # finish.
+          includeUpdaterJson: false
 
   # Experimental Android build — sideload APK, not Play Store. Release-signed
   # arm64-v8a only (covers ~all modern phones). tauri-action's `mobile: android`
