@@ -2,11 +2,12 @@
 // slices: high-frequency cursor `move` and low-frequency `semantic` (drop target).
 import { useSyncExternalStore } from "react";
 import { useEditorStore } from "@/stores/editorStore";
-import { dropIntent } from "./tabDragCore";
+import { dropIntent, editorDiffSide, resolveEditorDiff } from "./tabDragCore";
 
 export type TabDropTarget =
   | { kind: "diff"; targetId: string }
   | { kind: "reorder"; index: number }
+  | { kind: "editorDiff"; side: "left" | "right" }
   | null;
 
 export type TabDragSemantic = {
@@ -27,6 +28,7 @@ function targetEq(a: TabDropTarget, b: TabDropTarget): boolean {
   if (!a || !b || a.kind !== b.kind) return false;
   if (a.kind === "diff" && b.kind === "diff") return a.targetId === b.targetId;
   if (a.kind === "reorder" && b.kind === "reorder") return a.index === b.index;
+  if (a.kind === "editorDiff" && b.kind === "editorDiff") return a.side === b.side;
   return false;
 }
 
@@ -66,18 +68,30 @@ const THRESHOLD = 5;
 function computeTarget(x: number, y: number, draggingId: string, canDiff: boolean): TabDropTarget {
   const el = document.elementFromPoint(x, y) as HTMLElement | null;
   const tabEl = el?.closest<HTMLElement>("[data-tab-id]");
-  if (!tabEl) return null;
-  const targetId = tabEl.dataset.tabId;
-  if (!targetId) return null;
-  const tabs = useEditorStore.getState().tabs;
-  const idx = tabs.findIndex((t) => t.id === targetId);
-  if (idx < 0) return null;
-  const target = tabs[idx];
-  const allowDiff = canDiff && target.kind === "file" && targetId !== draggingId;
-  const r = tabEl.getBoundingClientRect();
-  const zone = dropIntent(x - r.left, r.width, allowDiff);
-  if (zone === "diff") return { kind: "diff", targetId };
-  return { kind: "reorder", index: zone === "before" ? idx : idx + 1 };
+  if (tabEl) {
+    const targetId = tabEl.dataset.tabId;
+    if (!targetId) return null;
+    const tabs = useEditorStore.getState().tabs;
+    const idx = tabs.findIndex((t) => t.id === targetId);
+    if (idx < 0) return null;
+    const target = tabs[idx];
+    const allowDiff = canDiff && target.kind === "file" && targetId !== draggingId;
+    const r = tabEl.getBoundingClientRect();
+    const zone = dropIntent(x - r.left, r.width, allowDiff);
+    if (zone === "diff") return { kind: "diff", targetId };
+    return { kind: "reorder", index: zone === "before" ? idx : idx + 1 };
+  }
+  if (!canDiff) return null;
+  const areaEl = el?.closest<HTMLElement>("[data-editor-drop-area]");
+  if (!areaEl) return null;
+  const state = useEditorStore.getState();
+  const active = state.tabs.find((t) => t.id === state.activeTabId) ?? null;
+  const dragged = state.tabs.find((t) => t.id === draggingId);
+  // Reuse the resolver as the single source of validity (browser/self-diff guards).
+  const r = areaEl.getBoundingClientRect();
+  const side = editorDiffSide(x - r.left, r.width);
+  if (!resolveEditorDiff(dragged, active, side)) return null;
+  return { kind: "editorDiff", side };
 }
 
 export function startTabDragGesture(opts: {
@@ -115,6 +129,11 @@ export function startTabDragGesture(opts: {
           { sftpId: tgt.sftpId, path: tgt.path, hostLabel: tgt.hostLabel },
         );
       }
+    } else if (target.kind === "editorDiff") {
+      const dragged = store.tabs.find((t) => t.id === opts.id);
+      const activeTab = store.tabs.find((t) => t.id === store.activeTabId) ?? null;
+      const pair = resolveEditorDiff(dragged, activeTab, target.side);
+      if (pair) store.openDiff(pair[0], pair[1]);
     } else {
       store.moveTab(opts.id, target.index);
     }
