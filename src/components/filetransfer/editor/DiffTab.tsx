@@ -198,7 +198,7 @@ export function DiffTab({ doc }: { doc: DiffDoc }) {
               onClick={() => {
                 const host = hostRef.current;
                 const tops = ribbonsRef.current?.chunkTops() ?? [];
-                const i = prevChunkIndex(tops, host ? host.scrollTop : 0);
+                const i = prevChunkIndex(tops, host ? host.scrollTop + host.clientHeight / 2 : 0);
                 if (i !== null) ribbonsRef.current?.scrollToChunk(i);
               }}
             />
@@ -209,7 +209,7 @@ export function DiffTab({ doc }: { doc: DiffDoc }) {
               onClick={() => {
                 const host = hostRef.current;
                 const tops = ribbonsRef.current?.chunkTops() ?? [];
-                const i = nextChunkIndex(tops, host ? host.scrollTop : 0);
+                const i = nextChunkIndex(tops, host ? host.scrollTop + host.clientHeight / 2 : 0);
                 if (i !== null) ribbonsRef.current?.scrollToChunk(i);
               }}
             />
