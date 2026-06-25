@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { writeClipboard } from "@/utils/clipboard";
 
 function formatBytes(b: number): string {
   if (b === 0) return "";
@@ -20,6 +22,7 @@ export function PortRow({
   badge,
   bytesTransferred,
   httpUrl,
+  localPort,
   onToggle,
   onDelete,
 }: {
@@ -32,10 +35,19 @@ export function PortRow({
   badge: BadgeType;
   bytesTransferred?: number;
   httpUrl?: string | null;
+  localPort?: number;
   onToggle: () => void;
   onDelete: () => void;
 }) {
+  const [copied, setCopied] = useState(false);
   const bytes = formatBytes(bytesTransferred ?? 0);
+
+  async function copyAddress() {
+    if (localPort == null) return;
+    await writeClipboard(`localhost:${localPort}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  }
   return (
     <div className="flex items-center gap-1.5 px-2 py-1.5 group hover:bg-(--t-bg-elevated)">
       {/* Status dot */}
@@ -107,6 +119,19 @@ export function PortRow({
           <Icon icon="lucide:trash-2" width={11} />
         )}
       </button>
+
+      {/* Copy localhost:port — visible on active rows */}
+      {isActive && localPort != null && (
+        <button
+          onClick={(e) => { e.stopPropagation(); void copyAddress(); }}
+          title={`Copy localhost:${localPort}`}
+          className="w-5 h-5 flex items-center justify-center rounded shrink-0 transition-all
+            text-(--t-text-muted) hover:text-(--t-text-primary) hover:bg-(--t-bg-elevated)"
+        >
+          <Icon icon={copied ? "lucide:check" : "lucide:copy"} width={11}
+            className={copied ? "text-green-400" : ""} />
+        </button>
+      )}
 
       {/* Open in browser — always visible, rightmost */}
       {isActive && httpUrl && (

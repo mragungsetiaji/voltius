@@ -198,6 +198,7 @@ export function PortsPanel() {
             isDeleting={busy.has(`del-${rule.id}`)}
             badge={null}
             bytesTransferred={tunnel?.bytes_transferred}
+            localPort={tunnel?.local_port}
             httpUrl={isActive && !isError && tunnel
               ? getLocalTunnelHttpUrl(rule.tunnel_type ?? "local", rule.remote_port, tunnel.local_port)
               : null}
@@ -230,6 +231,7 @@ export function PortsPanel() {
                 isDeleting={busy.has(`del-${key}`)}
                 badge={isAuto ? "auto" : "adhoc"}
                 bytesTransferred={tunnel.bytes_transferred}
+                localPort={tunnel.local_port}
                 httpUrl={getLocalTunnelHttpUrl(tunnel.tunnel_type ?? "local", tunnel.remote_port, tunnel.local_port)}
                 onToggle={() => handleTunnelStop(tunnel.id, key)}
                 onDelete={() => handleTunnelDelete(tunnel.id, tunnel.remote_port, key)}
