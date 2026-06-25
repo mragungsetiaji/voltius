@@ -432,15 +432,17 @@ export default function SFTPPage() {
   return (
     <div className="flex flex-col h-full bg-(--t-bg-base)">
       <EditorTabStrip />
-      {activeTab !== null ? (
-        <div className="flex-1 min-h-0 overflow-hidden">
-          {activeTab.kind === "file" ? (
-            <EditorTab doc={activeTab} />
-          ) : (
-            <DiffTab doc={activeTab} />
-          )}
+      {/* Keep every open tab mounted; hide inactive ones so CodeMirror state
+          (unsaved edits, scroll, dirty) survives switching tabs. */}
+      {editorTabs.map((tab) => (
+        <div
+          key={tab.id}
+          className="flex-1 min-h-0 overflow-hidden"
+          style={{ display: tab.id === activeTabId ? undefined : "none" }}
+        >
+          {tab.kind === "file" ? <EditorTab doc={tab} /> : <DiffTab doc={tab} />}
         </div>
-      ) : null}
+      ))}
       <div className={`flex flex-1 min-h-0 gap-3 p-3${activeTab !== null ? " hidden" : ""}`}>
         <div className="flex-1 min-w-0 rounded-xl overflow-hidden border border-(--t-border)">
           <SidePane

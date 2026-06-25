@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEditorStore } from "@/stores/editorStore";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 
@@ -8,6 +8,12 @@ export function EditorTabStrip() {
   const setActiveTab = useEditorStore((s) => s.setActiveTab);
   const closeTab = useEditorStore((s) => s.closeTab);
   const [pendingClose, setPendingClose] = useState<string | null>(null);
+
+  // Keep the active tab visible when it changes and the strip has scrolled.
+  const activeRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ inline: "nearest", block: "nearest" });
+  }, [activeTabId]);
 
   // Close immediately unless the tab has unsaved edits, in which case confirm.
   const requestClose = (id: string) => {
@@ -35,6 +41,7 @@ export function EditorTabStrip() {
     >
       {/* "Files" stays pinned; only the tab list scrolls when it overflows. */}
       <button
+        ref={activeTabId === null ? activeRef : undefined}
         className="shrink-0 px-2 py-1 rounded transition-colors"
         style={{
           fontWeight: activeTabId === null ? 600 : undefined,
@@ -55,6 +62,7 @@ export function EditorTabStrip() {
         return (
           <span key={t.id} className="flex items-center gap-0.5 shrink-0">
             <button
+              ref={active ? activeRef : undefined}
               className="px-2 py-1 rounded transition-colors"
               style={{
                 fontWeight: active ? 600 : undefined,
