@@ -8,7 +8,7 @@
 .cm-diff-ribbon { stroke-width: 1; }
 .cm-diff-ribbon-ins { fill: color-mix(in srgb, var(--t-status-success) 22%, transparent); stroke: var(--t-status-success); }
 .cm-diff-ribbon-del { fill: color-mix(in srgb, var(--t-status-error) 22%, transparent); stroke: var(--t-status-error); }
-.cm-diff-ribbon-mod { fill: color-mix(in srgb, var(--t-accent) 22%, transparent); stroke: var(--t-accent); }
+.cm-diff-ribbon-mod { fill: color-mix(in srgb, var(--t-status-warning) 22%, transparent); stroke: var(--t-status-warning); }
 
 .cm-diff-ribbon-actions {
   position: absolute; transform: translate(-50%, -50%);
