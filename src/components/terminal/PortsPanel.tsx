@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { Icon } from "@iconify/react";
 import { PortRow } from "@/components/terminal/PortRow";
+import { QuickForwardRow } from "@/components/terminal/QuickForwardRow";
 import { useSessionStore } from "@/stores/sessionStore";
 import { usePortForwardingStore } from "@/stores/portForwardingStore";
 import { useAllPortForwardingRules } from "@/hooks/useAllPortForwardingRules";
@@ -30,6 +31,18 @@ export function PortsPanel() {
   // Ports the user deleted from this panel — hidden even when suppressed
   const [hiddenPorts, setHiddenPorts] = useState<Set<number>>(new Set());
   const [busy, setBusy] = useState<Set<string>>(new Set());
+
+  const quickForwardInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleQuickForward(remotePort: number, localPort?: number) {
+    if (!activeSessionId) return;
+    await openPfTunnel({
+      sessionId: activeSessionId,
+      remotePort,
+      localPort: localPort ?? remotePort,
+      tunnelType: "local",
+    });
+  }
 
   const activeSession = sessions.find((s) => s.id === activeSessionId);
   const isSshSession = activeSession?.type === "ssh";
@@ -161,7 +174,8 @@ export function PortsPanel() {
   const isEmpty = rules.length === 0 && visibleUnclaimed.length === 0 && suppressedRows.length === 0;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
+    <div className="flex flex-col h-full">
+      <div className="flex-1 min-h-0 overflow-y-auto">
       {isEmpty && (
         <div className="px-3 py-4 text-xs text-(--t-text-dim)">
           No forwarded ports. Ports detected on the remote host will appear here automatically.
@@ -241,6 +255,8 @@ export function PortsPanel() {
           })}
         </>
       )}
+      </div>
+      <QuickForwardRow inputRef={quickForwardInputRef} onSubmit={handleQuickForward} />
     </div>
   );
 }
