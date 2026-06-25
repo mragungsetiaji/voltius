@@ -48,6 +48,7 @@ export function EditorTab({ doc }: { doc: EditorDoc }) {
   const [content, setContent] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<EditorReadError | string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const lastSaved = useRef<string>("");
 
@@ -72,9 +73,9 @@ export function EditorTab({ doc }: { doc: EditorDoc }) {
       await sftpWriteFile(doc.sftpId, doc.path, text);
       lastSaved.current = text;
       setDirty(doc.id, false);
-      setError(null);
+      setSaveError(null);
     } catch (e) {
-      setError(typeof e === "string" ? e : "save failed");
+      setSaveError(typeof e === "string" ? e : "Save failed");
     } finally {
       setSaving(false);
     }
@@ -85,6 +86,7 @@ export function EditorTab({ doc }: { doc: EditorDoc }) {
   useEffect(() => {
     let cancelled = false;
     setError(null);
+    setSaveError(null);
     setLoading(true);
     sftpReadFile(doc.sftpId, doc.path, maxBytes)
       .then((f) => {
@@ -161,6 +163,34 @@ export function EditorTab({ doc }: { doc: EditorDoc }) {
           onClick={() => { if (!saving) void doSave(content); }}
         />
       </div>
+      {/* Save error banner — non-destructive; editing continues underneath */}
+      {saveError && (
+        <div
+          className="flex items-center gap-2 shrink-0 px-2 py-1 border-b text-xs"
+          style={{
+            borderColor: "var(--t-border)",
+            background: "color-mix(in srgb, var(--t-status-error) 12%, transparent)",
+            color: "var(--t-status-error)",
+          }}
+        >
+          <span className="shrink-0">⚠</span>
+          <span className="truncate min-w-0">Save failed: {saveError}</span>
+          <button
+            className="ml-auto shrink-0 px-1 rounded"
+            title="Retry save"
+            onClick={() => { if (!saving) void doSave(content); }}
+          >
+            Retry
+          </button>
+          <button
+            className="shrink-0 px-1 rounded"
+            title="Dismiss"
+            onClick={() => setSaveError(null)}
+          >
+            ×
+          </button>
+        </div>
+      )}
       {/* Editor */}
       <div className="min-h-0 flex-1 overflow-auto">
         <CodeMirror

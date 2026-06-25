@@ -463,6 +463,27 @@ export function FilePane({
 }
 
 // ── buildSelectionActions ─────────────────────────────────────────────────────
+// Open a remote, editable (non-directory) file in the CodeMirror editor.
+// Shared by the right-click "Edit" action and double-click. Returns whether
+// the file was openable (local files and directories are not).
+export function openFileForEdit(
+  file: FileEntry,
+  ctx: Pick<SelectionActionsCtx, "isLocal" | "sftpId" | "hostLabel" | "onEdit">,
+): boolean {
+  if (ctx.isLocal || file.isDir || !ctx.sftpId) return false;
+  if (ctx.onEdit) {
+    ctx.onEdit(file.path);
+  } else {
+    useEditorStore.getState().openDoc({
+      sftpId: ctx.sftpId,
+      path: file.path,
+      hostLabel: ctx.hostLabel,
+      autoSave: useSftpSettingsStore.getState().editorAutoSave,
+    });
+  }
+  return true;
+}
+
 // Single source of truth for file-level actions. Used by both the per-item
 // right-click context menu and the pane ellipsis menu.
 
@@ -496,22 +517,10 @@ function buildSelectionActions(files: FileEntry[], ctx: SelectionActionsCtx): Co
 
   // Edit (single non-dir remote file only)
   if (single && !ctx.isLocal && !single.isDir && ctx.sftpId) {
-    const { sftpId, hostLabel, onEdit } = ctx;
     items.push({
       label: "Edit",
       icon: "lucide:file-pen",
-      onClick: () => {
-        if (onEdit) {
-          onEdit(single.path);
-        } else {
-          useEditorStore.getState().openDoc({
-            sftpId: sftpId!,
-            path: single.path,
-            hostLabel,
-            autoSave: useSftpSettingsStore.getState().editorAutoSave,
-          });
-        }
-      },
+      onClick: () => { openFileForEdit(single, ctx); },
     });
   }
 
@@ -954,7 +963,7 @@ function VirtualFileList({
                 visibleCols={visibleCols}
                 selectableId={file.path}
                 onClick={(e) => { focusIndex.current = virtualItem.index; onItemSelect(file.path, e as React.MouseEvent<HTMLDivElement>); }}
-                onDoubleClick={() => { if (file.isDir) onNavigate(file.path); }}
+                onDoubleClick={() => { if (file.isDir) onNavigate(file.path); else openFileForEdit(file, selectionActionsCtx); }}
                 contextActions={contextActions.length > 0 ? contextActions : undefined}
                 onPointerDown={(e) => {
                   if (e.button !== 0) return;
