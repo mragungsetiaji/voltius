@@ -116,6 +116,7 @@ export interface Connection {
   jump_hosts?: JumpHost[];
   env_vars?: EnvVar[];
   agent_forwarding?: boolean;
+  legacy_algorithms?: boolean;
   pre_command?: string;
   post_command?: string;
   terminal_encoding?: string;
@@ -151,6 +152,7 @@ export interface ConnectionFormData {
   jump_hosts?: JumpHost[];
   env_vars?: EnvVar[];
   agent_forwarding?: boolean;
+  legacy_algorithms?: boolean;
   pre_command?: string;
   post_command?: string;
   terminal_encoding?: string;

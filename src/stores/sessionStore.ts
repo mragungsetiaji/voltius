@@ -100,6 +100,7 @@ async function buildSshConnectOptions(
   jumpHosts: Awaited<ReturnType<typeof resolveJumpHosts>> | undefined;
   envVars: [string, string][] | undefined;
   agentForwarding: boolean;
+  legacyAlgorithms: boolean;
   preCommand: string | undefined;
   autoForward: boolean;
   shellIntegration: boolean;
@@ -125,6 +126,7 @@ async function buildSshConnectOptions(
     jumpHosts: jumpHosts.length > 0 ? jumpHosts : undefined,
     envVars: envVars.length > 0 ? envVars : undefined,
     agentForwarding: connection.agent_forwarding ?? false,
+    legacyAlgorithms: connection.legacy_algorithms ?? false,
     preCommand: connection.pre_command ?? undefined,
     autoForward: getToggle("auto-forward"),
     shellIntegration: resolveDisableOverride(connection.shell_integration_disabled, getToggle("shell-integration")),

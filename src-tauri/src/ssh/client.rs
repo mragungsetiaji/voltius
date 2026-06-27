@@ -454,12 +454,18 @@ pub async fn connect(
     attach_only: bool,
     pty_cols: u32,
     pty_rows: u32,
+    legacy_algorithms: bool,
 ) -> Result<ConnectedSession, String> {
     let config = Arc::new(client::Config {
         // interval 0 = keepalive disabled.
         keepalive_interval: (keepalive_interval_secs > 0)
             .then(|| std::time::Duration::from_secs(keepalive_interval_secs)),
         keepalive_max,
+        preferred: if legacy_algorithms {
+            legacy_preferred()
+        } else {
+            Default::default()
+        },
         ..Default::default()
     });
 
@@ -864,4 +870,64 @@ pub async fn connect(
 
 fn shell_escape(s: &str) -> String {
     format!("'{}'", s.replace('\'', "'\\''"))
+}
+
+/// russh's safe defaults plus legacy/weak algorithms appended (OpenSSH `+algo`
+/// semantics): strong algorithms still negotiate first, but old devices — e.g.
+/// legacy Cisco IOS that only offers `diffie-hellman-group1-sha1` / `3des-cbc`
+/// / `hmac-sha1` — can still connect. `ssh-rsa` host keys are already accepted
+/// by russh's default, so only kex/cipher/mac need extending here.
+fn legacy_preferred() -> russh::Preferred {
+    use russh::{cipher, kex, mac};
+
+    let base = russh::Preferred::DEFAULT;
+
+    // None of these are present in russh's safe defaults, so plain appends keep
+    // the secure-first ordering without duplicates.
+    let mut kex_algos = base.kex.to_vec();
+    kex_algos.extend([kex::DH_GEX_SHA1, kex::DH_G14_SHA1, kex::DH_G1_SHA1]);
+
+    let mut ciphers = base.cipher.to_vec();
+    ciphers.extend([
+        cipher::AES_256_CBC,
+        cipher::AES_192_CBC,
+        cipher::AES_128_CBC,
+        cipher::TRIPLE_DES_CBC,
+    ]);
+
+    let mut macs = base.mac.to_vec();
+    macs.extend([mac::HMAC_SHA1_ETM, mac::HMAC_SHA1]);
+
+    russh::Preferred {
+        kex: kex_algos.into(),
+        cipher: ciphers.into(),
+        mac: macs.into(),
+        key: base.key,
+        compression: base.compression,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::legacy_preferred;
+
+    #[test]
+    fn legacy_preferred_includes_weak_algorithms() {
+        let p = legacy_preferred();
+        let kex: Vec<&str> = p.kex.iter().map(|n| n.as_ref()).collect();
+        let cipher: Vec<&str> = p.cipher.iter().map(|n| n.as_ref()).collect();
+        let mac: Vec<&str> = p.mac.iter().map(|n| n.as_ref()).collect();
+
+        // The exact algorithms the legacy Cisco in issue #17 offers.
+        assert!(kex.contains(&"diffie-hellman-group1-sha1"));
+        assert!(cipher.contains(&"3des-cbc"));
+        assert!(mac.contains(&"hmac-sha1"));
+
+        // Strong defaults still negotiate first.
+        assert_eq!(kex.first().copied(), Some("mlkem768x25519-sha256"));
+        assert_eq!(
+            cipher.first().copied(),
+            Some("chacha20-poly1305@openssh.com")
+        );
+    }
 }

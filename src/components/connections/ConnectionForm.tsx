@@ -96,6 +96,7 @@ const ConnectionForm = forwardRef<ConnectionFormHandle, Props>(function Connecti
   const [envVars, setEnvVars] = useState<EnvVar[]>(initial?.env_vars ?? []);
   const [showEnvVars, setShowEnvVars] = useState(false);
   const [agentForwarding, setAgentForwarding] = useState(initial?.agent_forwarding ?? false);
+  const [legacyAlgorithms, setLegacyAlgorithms] = useState(initial?.legacy_algorithms ?? false);
   const [pingDisabled, setPingDisabled] = useState(initial?.ping_disabled ?? false);
   const [shellIntegrationDisabled, setShellIntegrationDisabled] = useState<boolean | undefined>(initial?.shell_integration_disabled);
   const [globalShellIntegration] = useToggle("shell-integration");
@@ -113,7 +114,7 @@ const ConnectionForm = forwardRef<ConnectionFormHandle, Props>(function Connecti
   const [showDistroPicker, setShowDistroPicker] = useState(false);
   const [detectingDistro, setDetectingDistro] = useState(false);
   const [distroError, setDistroError] = useState("");
-  const hasAdvanced = !!(initial?.jump_hosts?.length || initial?.env_vars?.length || initial?.pre_command || initial?.post_command || initial?.terminal_encoding || initial?.agent_forwarding || initial?.ping_disabled || initial?.shell_integration_disabled !== undefined || initial?.keepalive_preset);
+  const hasAdvanced = !!(initial?.jump_hosts?.length || initial?.env_vars?.length || initial?.pre_command || initial?.post_command || initial?.terminal_encoding || initial?.agent_forwarding || initial?.legacy_algorithms || initial?.ping_disabled || initial?.shell_integration_disabled !== undefined || initial?.keepalive_preset);
   const [showAdvanced, setShowAdvanced] = useState(hasAdvanced);
   const defaultVaultId = useDefaultVaultId();
   const [vaultId, setVaultId] = useState<string>(() => initial?.vault_id ?? defaultVaultId);
@@ -240,6 +241,7 @@ const ConnectionForm = forwardRef<ConnectionFormHandle, Props>(function Connecti
         jump_hosts: jumpHosts.length > 0 ? jumpHosts : undefined,
         env_vars: envVars.length > 0 ? envVars : undefined,
         agent_forwarding: agentForwarding,
+        legacy_algorithms: legacyAlgorithms,
         pre_command: preCommand.trim() || undefined,
         post_command: postCommand.trim() || undefined,
         terminal_encoding: terminalEncoding || undefined,
@@ -264,7 +266,7 @@ const ConnectionForm = forwardRef<ConnectionFormHandle, Props>(function Connecti
 
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => schedule(), [name, host, port, username, protocol, ftpSecure, password, privateKey, passphrase, identityId, keyId, folderId, tags, vaultId, jumpHosts, envVars, agentForwarding, preCommand, postCommand, terminalEncoding, distro, icon, pingDisabled, shellIntegrationDisabled, keepalivePreset, persistSession]);
+  useEffect(() => schedule(), [name, host, port, username, protocol, ftpSecure, password, privateKey, passphrase, identityId, keyId, folderId, tags, vaultId, jumpHosts, envVars, agentForwarding, legacyAlgorithms, preCommand, postCommand, terminalEncoding, distro, icon, pingDisabled, shellIntegrationDisabled, keepalivePreset, persistSession]);
 
   useImperativeHandle(ref, () => ({ flush, isDirty: () => userEditedRef.current }), [flush]);
 
@@ -515,7 +517,7 @@ const ConnectionForm = forwardRef<ConnectionFormHandle, Props>(function Connecti
               className="flex items-center gap-1.5 text-xs text-(--t-text-dim) hover:text-(--t-text-primary) transition-colors w-full pt-1"
             >
               <span>Advanced</span>
-              {!showAdvanced && (jumpHosts.length > 0 || envVars.length > 0 || preCommand || postCommand || terminalEncoding || agentForwarding || pingDisabled || shellIntegrationDisabled !== undefined || keepalivePreset) && (
+              {!showAdvanced && (jumpHosts.length > 0 || envVars.length > 0 || preCommand || postCommand || terminalEncoding || agentForwarding || legacyAlgorithms || pingDisabled || shellIntegrationDisabled !== undefined || keepalivePreset) && (
                 <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-(--t-accent)" />
               )}
               <Icon icon={showAdvanced ? "lucide:chevron-up" : "lucide:chevron-down"} width={12} className="ml-auto" />
@@ -585,6 +587,19 @@ const ConnectionForm = forwardRef<ConnectionFormHandle, Props>(function Connecti
                     <Toggle
                       checked={agentForwarding}
                       onChange={(v) => { markDirty(); setAgentForwarding(v); }}
+                    />
+                  </span>
+                </div>
+                <div
+                  className="flex items-center gap-1.5 text-xs text-(--t-text-dim) w-full py-1"
+                  title="Allow weak legacy algorithms (diffie-hellman-group1-sha1, 3des-cbc, hmac-sha1, …) for old devices such as legacy Cisco IOS. Strong algorithms are still preferred. Only enable for hosts that require it."
+                >
+                  <Icon icon="lucide:shield-alert" width={13} />
+                  <span>Legacy Algorithms</span>
+                  <span className="ml-auto">
+                    <Toggle
+                      checked={legacyAlgorithms}
+                      onChange={(v) => { markDirty(); setLegacyAlgorithms(v); }}
                     />
                   </span>
                 </div>

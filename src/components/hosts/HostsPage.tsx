@@ -543,6 +543,7 @@ export default function HostsPage() {
             username: conn.username, auth_type: conn.auth_type, tags: conn.tags,
             identity_id: conn.identity_id, key_id: conn.key_id, folder_id: conn.folder_id, vault_id: vaultId,
             jump_hosts: conn.jump_hosts, env_vars: conn.env_vars, agent_forwarding: conn.agent_forwarding,
+            legacy_algorithms: conn.legacy_algorithms,
             pre_command: conn.pre_command, post_command: conn.post_command, terminal_encoding: conn.terminal_encoding,
             pinned: conn.pinned, ping_disabled: conn.ping_disabled,
             shell_integration_disabled: conn.shell_integration_disabled,

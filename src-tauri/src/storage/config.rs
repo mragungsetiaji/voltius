@@ -132,6 +132,9 @@ pub struct Connection {
     pub env_vars: Vec<EnvVar>,
     #[serde(default)]
     pub agent_forwarding: bool,
+    /// Allow weak legacy SSH algorithms (e.g. legacy Cisco IOS) for this host.
+    #[serde(default)]
+    pub legacy_algorithms: bool,
     #[serde(default)]
     pub pre_command: Option<String>,
     #[serde(default)]
@@ -203,6 +206,8 @@ pub struct ConnectionFormData {
     pub env_vars: Vec<EnvVar>,
     #[serde(default)]
     pub agent_forwarding: bool,
+    #[serde(default)]
+    pub legacy_algorithms: bool,
     #[serde(default)]
     pub pre_command: Option<String>,
     #[serde(default)]
@@ -735,6 +740,7 @@ mod tests {
                 value: "xterm".into(),
             }],
             agent_forwarding: true,
+            legacy_algorithms: false,
             pre_command: Some("echo hi".into()),
             post_command: Some("echo bye".into()),
             terminal_encoding: Some("utf-8".into()),

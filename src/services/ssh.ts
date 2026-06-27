@@ -22,6 +22,7 @@ export async function sshConnect(params: {
   jumpHosts?: JumpHostConnect[];
   envVars?: [string, string][];
   agentForwarding?: boolean;
+  legacyAlgorithms?: boolean;
   preCommand?: string;
   autoForward?: boolean;
   shellIntegration?: boolean;
@@ -47,6 +48,7 @@ export async function sshConnect(params: {
     jumpHosts: params.jumpHosts && params.jumpHosts.length > 0 ? params.jumpHosts : null,
     envVars: params.envVars && params.envVars.length > 0 ? params.envVars : null,
     agentForwarding: params.agentForwarding ?? false,
+    legacyAlgorithms: params.legacyAlgorithms ?? false,
     preCommand: params.preCommand ?? null,
     autoForward: params.autoForward ?? true,
     shellIntegration: params.shellIntegration ?? null,

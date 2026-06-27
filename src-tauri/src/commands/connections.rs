@@ -45,6 +45,7 @@ fn merge_form_into_connection(existing: &Connection, data: ConnectionFormData) -
         jump_hosts: data.jump_hosts,
         env_vars: data.env_vars,
         agent_forwarding: data.agent_forwarding,
+        legacy_algorithms: data.legacy_algorithms,
         pre_command: data.pre_command,
         post_command: data.post_command,
         terminal_encoding: data.terminal_encoding,
@@ -117,7 +118,7 @@ macro_rules! connection_clocks {
 connection_clocks! {
     simple: [
         name, host, port, username, auth_type, tags, identity_id, key_id,
-        folder_id, vault_id, agent_forwarding, pre_command, post_command,
+        folder_id, vault_id, agent_forwarding, legacy_algorithms, pre_command, post_command,
         terminal_encoding, distro, icon, ping_disabled,
         shell_integration_disabled, keepalive_preset, persist_session, connection_type, serial_port, serial_baud,
         serial_data_bits, serial_parity, serial_stop_bits, serial_flow_control, ftp_secure,
@@ -169,6 +170,7 @@ pub fn connection_save(data: ConnectionFormData) -> Result<Connection, String> {
         jump_hosts: data.jump_hosts,
         env_vars: data.env_vars,
         agent_forwarding: data.agent_forwarding,
+        legacy_algorithms: data.legacy_algorithms,
         pre_command: data.pre_command,
         post_command: data.post_command,
         terminal_encoding: data.terminal_encoding,
@@ -307,6 +309,7 @@ mod tests {
                 value: "V".into(),
             }],
             agent_forwarding: false,
+            legacy_algorithms: false,
             pre_command: Some("pre".into()),
             post_command: Some("post".into()),
             terminal_encoding: Some("utf-8".into()),
@@ -356,6 +359,7 @@ mod tests {
                 value: "V2".into(),
             }],
             agent_forwarding: true,
+            legacy_algorithms: true,
             pre_command: Some("pre2".into()),
             post_command: Some("post2".into()),
             terminal_encoding: Some("latin-1".into()),
@@ -540,7 +544,7 @@ mod tests {
     }
 
     /// Pins the exact set of fields `bump_changed_clocks` tracks when everything
-    /// changes (30 fields, incl. `agent_forwarding`, `ping_disabled`,
+    /// changes (31 fields, incl. `agent_forwarding`, `legacy_algorithms`, `ping_disabled`,
     /// `shell_integration_disabled`, `keepalive_preset`, `persist_session`;
     /// `pinned` is excluded as device-local).
     /// Since Phase 1, create-time init and update-time bump both derive from the
@@ -582,6 +586,7 @@ mod tests {
             "jump_hosts",
             "keepalive_preset",
             "key_id",
+            "legacy_algorithms",
             "name",
             "persist_session",
             "ping_disabled",
@@ -602,7 +607,7 @@ mod tests {
         ];
         expected.sort();
         assert_eq!(keys, expected);
-        assert_eq!(keys.len(), 30);
+        assert_eq!(keys.len(), 31);
     }
 
     /// Phase 1 reconciliation: the clocks seeded for a brand-new connection
@@ -622,6 +627,6 @@ mod tests {
         let bumpable: HashSet<String> = new.clocks.into_keys().collect();
 
         assert_eq!(seeded, bumpable);
-        assert_eq!(seeded.len(), 30);
+        assert_eq!(seeded.len(), 31);
     }
 }
