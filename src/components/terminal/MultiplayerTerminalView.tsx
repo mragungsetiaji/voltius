@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebglAddon } from "@xterm/addon-webgl";
+import { attachTerminalClipboard } from "@/components/terminal/terminalClipboard";
 import { useThemeStore } from "@/stores/themeStore";
 import { useTerminalSettingsStore } from "@/stores/terminalSettingsStore";
 import { useTeamSessionStore } from "@/stores/teamSessionStore";
@@ -46,6 +47,15 @@ export default function MultiplayerTerminalView({ localSessionId, active }: Prop
         // fallback to canvas
       }
 
+      // Local clipboard parity with solo terminals (copy-on-select, smart Ctrl+C,
+      // Ctrl+Shift+C, paste, right-click). No OSC 52: a guest's clipboard is never
+      // written by the session controller — only by the guest's own action.
+      const clip = attachTerminalClipboard(term, container);
+      term.attachCustomKeyEventHandler((e) => {
+        const r = clip.handleKeyEvent(e);
+        return r != null ? r : true;
+      });
+
       fitAddon.fit();
       termRef.current = term;
       fitRef.current = fitAddon;
@@ -67,6 +77,7 @@ export default function MultiplayerTerminalView({ localSessionId, active }: Prop
 
       cleanupRef.current = () => {
         onDataDispose.dispose();
+        clip.dispose();
         window.removeEventListener("resize", handleWindowResize);
         resizeObserver.disconnect();
         term.dispose();

@@ -1,4 +1,4 @@
-import { writeClipboard, readClipboard } from "../utils/clipboard";
+import { attachTerminalClipboard, type TerminalClipboardHandle } from "@/components/terminal/terminalClipboard";
 import { useEffect, useRef, useCallback } from "react";
 import { Terminal, type IBufferCell } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
@@ -12,7 +12,6 @@ import { serialWrite, onSerialOutput, onSerialClosed } from "@/services/serial";
 import { useThemeStore } from "@/stores/themeStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useTerminalSettingsStore } from "@/stores/terminalSettingsStore";
-import { getToggle } from "@/stores/toggleSettingsStore";
 import { matchShortcut } from "@/stores/shortcutStore";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useTerminalCwdStore } from "@/stores/terminalCwdStore";
@@ -143,7 +142,6 @@ type CacheEntry = {
   inputGateRef: { current: (() => boolean) | undefined };
   onClosedRef: { current: (() => void) | undefined };
   onResizeRef: { current: ((cols: number, rows: number) => void) | undefined };
-  copyBtnRef: { el: HTMLDivElement | null; timer: ReturnType<typeof setTimeout> | null };
   dispose: () => void; // full teardown, called only when the session is deleted
 };
 
@@ -359,61 +357,6 @@ function scrollMinimapToRatio(entry: CacheEntry, ratio: number) {
   scheduleMinimapNotify(entry);
 }
 
-function hideCopyFeedback(entry: CacheEntry) {
-  if (entry.copyBtnRef.timer !== null) { clearTimeout(entry.copyBtnRef.timer); entry.copyBtnRef.timer = null; }
-  entry.copyBtnRef.el?.remove();
-  entry.copyBtnRef.el = null;
-}
-
-function showCopyFeedback(entry: CacheEntry, x: number, y: number, sel: string) {
-  hideCopyFeedback(entry);
-  writeClipboard(sel);
-  if (!getToggle("select-to-copy")) return;
-  const bw = 46;
-  const bh = 28;
-  let bx = x + 8;
-  let by = y - bh - 8;
-  if (bx + bw > window.innerWidth) bx = x - bw - 8;
-  if (by < 0) by = y + 8;
-  const el = document.createElement("div");
-  Object.assign(el.style, {
-    position: "fixed",
-    zIndex: "10000",
-    left: `${bx}px`,
-    top: `${by}px`,
-    width: `${bw}px`,
-    height: `${bh}px`,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "3px",
-    borderRadius: "6px",
-    background: "var(--t-bg-card)",
-    border: "1px solid var(--t-border)",
-    color: "var(--t-text-primary)",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-    pointerEvents: "none",
-    opacity: "0",
-    transform: "translateY(4px)",
-    transition: "opacity 100ms ease-out, transform 100ms ease-out",
-  });
-  el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-  document.body.appendChild(el);
-  entry.copyBtnRef.el = el;
-  requestAnimationFrame(() => {
-    if (entry.copyBtnRef.el !== el) return;
-    el.style.opacity = "1";
-    el.style.transform = "translateY(0)";
-    entry.copyBtnRef.timer = setTimeout(() => {
-      el.style.opacity = "0";
-      el.style.transform = "translateY(4px)";
-      entry.copyBtnRef.timer = setTimeout(() => {
-        if (entry.copyBtnRef.el === el) hideCopyFeedback(entry);
-      }, 110);
-    }, 1200);
-  });
-}
-
 function searchDecorations() {
   const css = getComputedStyle(document.documentElement);
   const accent = css.getPropertyValue("--t-accent").trim() || "#6366f1";
@@ -610,6 +553,7 @@ useSessionStore.subscribe((state) => {
 
 export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encoding, onResize }: UseTerminalOptions) {
   const mountCleanupRef = useRef<(() => void) | null>(null);
+  const clipRef = useRef<TerminalClipboardHandle | null>(null);
 
   // Keep the cached entry's callback refs current on every render
   useEffect(() => {
@@ -639,22 +583,11 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
         fitAddon.fit();
 
         // Container-specific listeners (re-registered on each mount)
-        const handleContextMenu = (e: MouseEvent) => {
-          e.preventDefault();
-          readClipboard().then((text) => { if (text) terminal.paste(text); });
-        };
-        container.addEventListener("contextmenu", handleContextMenu);
+        const clip = attachTerminalClipboard(terminal, container, { osc52: true });
+        clipRef.current = clip;
 
         const handleWindowResize = () => fitAddon.fit();
         window.addEventListener("resize", handleWindowResize);
-
-        const handleContainerMouseUp = (e: MouseEvent) => {
-          setTimeout(() => {
-            const sel = existing.terminal.getSelection();
-            if (sel) showCopyFeedback(existing, e.clientX, e.clientY, sel);
-          }, 20);
-        };
-        container.addEventListener("mouseup", handleContainerMouseUp);
 
         let fitTimer: ReturnType<typeof setTimeout> | null = null;
         const resizeObserver = new ResizeObserver(() => {
@@ -664,8 +597,8 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
         resizeObserver.observe(container);
 
         mountCleanupRef.current = () => {
-          container.removeEventListener("contextmenu", handleContextMenu);
-          container.removeEventListener("mouseup", handleContainerMouseUp);
+          clip.dispose();
+          if (clipRef.current === clip) clipRef.current = null;
           window.removeEventListener("resize", handleWindowResize);
           resizeObserver.disconnect();
           if (fitTimer !== null) clearTimeout(fitTimer);
@@ -763,7 +696,6 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
         inputGateRef: { current: inputGate?.current },
         onClosedRef: { current: onClosed },
         onResizeRef: { current: onResize },
-        copyBtnRef: { el: null, timer: null },
         dispose: () => {}, // filled in below
       };
       terminalCache.set(sessionId, entry);
@@ -772,10 +704,6 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
       const searchResultsDispose = searchAddon.onDidChangeResults(({ resultIndex, resultCount }) => {
         entry.search.snapshot = { ...entry.search.snapshot, resultIndex, resultCount };
         notifySearch(entry);
-      });
-
-      const selectionChangeDispose = term.onSelectionChange(() => {
-        if (!term.getSelection()) hideCopyFeedback(entry);
       });
 
       const scrollDispose = term.onScroll(() => {
@@ -810,35 +738,8 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
           if (e.type === "keydown") useUIStore.getState().setOmniOpen(true);
           return false;
         }
-        if (e.ctrlKey && e.shiftKey && e.key === "C") {
-          if (e.type === "keydown") {
-            const sel = term.getSelection();
-            if (sel) writeClipboard(sel);
-          }
-          return false;
-        }
-        if (e.ctrlKey && e.shiftKey && e.key === "V") {
-          e.preventDefault();
-          if (e.type === "keydown") {
-            readClipboard().then((text) => { if (text) term.paste(text); });
-          }
-          return false;
-        }
-        if (e.ctrlKey && !e.shiftKey && e.key === "c") {
-          const sel = term.getSelection();
-          if (sel) {
-            if (e.type === "keydown") writeClipboard(sel);
-            return false;
-          }
-          return true;
-        }
-        if (e.ctrlKey && !e.shiftKey && e.key === "v") {
-          e.preventDefault();
-          if (e.type === "keydown") {
-            readClipboard().then((text) => { if (text) term.paste(text); });
-          }
-          return false;
-        }
+        const clipResult = clipRef.current?.handleKeyEvent(e);
+        if (clipResult != null) return clipResult;
         if (matchShortcut("terminal-search", e)) {
           if (e.type === "keydown") {
             e.preventDefault();
@@ -998,35 +899,22 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
         onResizeDispose.dispose();
         oscCwdDispose.dispose();
         searchResultsDispose.dispose();
-        selectionChangeDispose.dispose();
         scrollDispose.dispose();
         bufferChangeDispose.dispose();
         if (entry.minimap.frame !== null) cancelAnimationFrame(entry.minimap.frame);
         entry.search.subscribers.clear();
         entry.minimap.subscribers.clear();
         hideLinkTooltip();
-        hideCopyFeedback(entry);
         Promise.all(unlistenPromises).then((fns) => fns.forEach((fn) => fn()));
         term.dispose();
       };
 
       // Container-specific listeners (registered on each mount, torn down on unmount)
-      const handleContextMenu = (e: MouseEvent) => {
-        e.preventDefault();
-        readClipboard().then((text) => { if (text) term.paste(text); });
-      };
-      container.addEventListener("contextmenu", handleContextMenu);
+      const clip = attachTerminalClipboard(term, container, { osc52: true });
+      clipRef.current = clip;
 
       const handleWindowResize = () => fitAddon.fit();
       window.addEventListener("resize", handleWindowResize);
-
-      const handleContainerMouseUp = (e: MouseEvent) => {
-        setTimeout(() => {
-          const sel = entry.terminal.getSelection();
-          if (sel) showCopyFeedback(entry, e.clientX, e.clientY, sel);
-        }, 20);
-      };
-      container.addEventListener("mouseup", handleContainerMouseUp);
 
       let fitTimer: ReturnType<typeof setTimeout> | null = null;
       const resizeObserver = new ResizeObserver(() => {
@@ -1036,8 +924,8 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
       resizeObserver.observe(container);
 
       mountCleanupRef.current = () => {
-        container.removeEventListener("contextmenu", handleContextMenu);
-        container.removeEventListener("mouseup", handleContainerMouseUp);
+        clip.dispose();
+        if (clipRef.current === clip) clipRef.current = null;
         window.removeEventListener("resize", handleWindowResize);
         resizeObserver.disconnect();
         if (fitTimer !== null) clearTimeout(fitTimer);
