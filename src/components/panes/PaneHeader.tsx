@@ -97,7 +97,6 @@ export function PaneHeader({ paneId, session, active }: { paneId: string; sessio
   const [pingEnabled] = useToggle("reachability");
   const activePollIntervalMs = useHostPingStore((s) => s.activePollIntervalMs);
   const setStatus = useHostPingStore((s) => s.setStatus);
-  const closePane = useLayoutStore((s) => s.closePane);
   const splitPane = useLayoutStore((s) => s.splitPane);
   const detachPane = useLayoutStore((s) => s.detachPane);
   const maximizedPaneId = useLayoutStore((s) => s.maximizedPaneId);
@@ -246,7 +245,15 @@ export function PaneHeader({ paneId, session, active }: { paneId: string; sessio
   };
 
   const handleClosePane = () => {
-    closePane(paneId);
+    if (mpState) {
+      if (mpState.role === "host") useTeamSessionStore.getState().stopSharing(session.id).catch(() => {});
+      else useTeamSessionStore.getState().leaveSession(session.id);
+    }
+    // disconnect() is async; removeSession() drops it synchronously so it can't linger as an ungrouped tab
+    if (session.type !== "multiplayer" && (session.status === "connected" || session.status === "connecting")) {
+      void useSessionStore.getState().disconnect(session.id);
+    }
+    useSessionStore.getState().removeSession(session.id);
     const layout = useLayoutStore.getState();
     const nextLeaf = findLeaf(layout.root, layout.activePaneId);
     if (nextLeaf) useSessionStore.getState().setActive(nextLeaf.sessionId);
