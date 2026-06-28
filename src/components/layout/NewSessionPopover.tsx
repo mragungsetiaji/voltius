@@ -16,6 +16,7 @@ import {
   type ShellOption,
 } from "@/components/layout/newSessionItems";
 import { useLocalShells } from "@/hooks/useLocalShells";
+import { useHostPingStore } from "@/stores/hostPingStore";
 import { useIsAndroid } from "@/utils/platform";
 import type { Connection } from "@/types";
 
@@ -144,8 +145,19 @@ export function NewSessionPopover({ anchorRef, onClose }: NewSessionPopoverProps
   const hostsStart = idx; idx += hosts.length;
   const localStart = idx; idx += localShells.length;
 
-  const statusColor = (c: Connection) =>
-    activeConnectionIds.has(c.id) ? "var(--t-status-connected)" : "var(--t-text-muted)";
+  const pingStatuses = useHostPingStore((s) => s.statuses);
+
+  // Mirror the reachability convention used by HostCard: green when the host
+  // pings up, red when down, dim when unknown/not yet probed. (An active
+  // session implies the host is up, so the ping store already reflects it.)
+  const statusColor = (c: Connection) => {
+    const status = pingStatuses[c.id];
+    return status === "up"
+      ? "var(--t-status-connected)"
+      : status === "down"
+      ? "var(--t-status-error)"
+      : "var(--t-text-dim)";
+  };
 
   const hostRow = (c: Connection, rowIdx: number) => {
     const isSel = selected === rowIdx;
