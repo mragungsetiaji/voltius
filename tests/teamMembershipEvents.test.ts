@@ -1,12 +1,11 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "vitest";
 import {
   getTeamMembershipDelta,
   handleMembershipChangedEvent,
 } from "../src/services/teamMembershipEvents.ts";
 
 test("membership event detects added and removed teams", () => {
-  assert.deepEqual(getTeamMembershipDelta(["team-a", "team-b"], ["team-b", "team-c"]), {
+  expect(getTeamMembershipDelta(["team-a", "team-b"], ["team-b", "team-c"])).toEqual({
     added: ["team-c"],
     removed: ["team-a"],
   });
@@ -22,5 +21,5 @@ test("membership event runs setup for newly added teams after reloading teams", 
     onTeamAdded: async (teamId) => { added.push(teamId); },
   });
 
-  assert.deepEqual(added, ["team-b"]);
+  expect(added).toEqual(["team-b"]);
 });

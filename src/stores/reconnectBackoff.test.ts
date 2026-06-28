@@ -1,11 +1,12 @@
 import { backoffDelays, cancelBackoff, handleSessionClosed, runBackoff, type BackoffStore, type SessionStatus } from "./reconnectBackoffCore.ts";
+import { test } from "vitest";
 
+test("reconnectBackoff", async () => {
 function assertEqual<T>(actual: T, expected: T, msg: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     console.error(`FAIL ${msg}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
     throw new Error(msg);
   }
-  console.log(`PASS ${msg}`);
 }
 
 // --- schedule (pure) ---
@@ -172,5 +173,4 @@ globalThis.setTimeout = realSetTimeout;
   handleSessionClosed("local", "s1", deps("connected"));
   assertEqual(calls, ["disconnect"], "local close marks disconnected without reconnecting");
 })();
-
-console.log("ALL TESTS PASSED");
+});

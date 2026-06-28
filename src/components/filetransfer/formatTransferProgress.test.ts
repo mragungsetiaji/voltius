@@ -1,6 +1,8 @@
 import { formatTransferProgress } from "./SFTPTypes.ts";
 import type { Transfer } from "./SFTPTypes.ts";
+import { test } from "vitest";
 
+test("formatTransferProgress", async () => {
 function assertEqual(actual: string, expected: string, msg: string) {
   if (actual !== expected) throw new Error(`${msg}\n  expected: ${expected}\n  actual:   ${actual}`);
 }
@@ -41,5 +43,4 @@ assertEqual(
   "100 B / 100 B · 100 B/s",
   "zero eta omitted",
 );
-
-console.log("formatTransferProgress: OK");
+});

@@ -7,7 +7,9 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    // Legacy *.test.ts are node --experimental-strip-types scripts; vitest only collects *.spec.ts(x).
-    include: ["src/**/*.spec.ts", "src/**/*.spec.tsx"],
+    include: [
+      "src/**/*.{test,spec}.{ts,tsx}",
+      "tests/**/*.{test,spec}.ts",
+    ],
   },
 });

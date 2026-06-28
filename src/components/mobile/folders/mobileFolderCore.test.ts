@@ -1,12 +1,13 @@
 // src/components/mobile/folders/mobileFolderCore.test.ts
 import { buildMoveTargets, scopeItems, folderItemCount, type FolderLike } from "./mobileFolderCore.ts";
+import { test } from "vitest";
 
+test("mobileFolderCore", async () => {
 function assertEqual<T>(actual: T, expected: T, msg: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     console.error(`FAIL ${msg}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
     throw new Error(msg);
   }
-  console.log(`PASS ${msg}`);
 }
 
 const folders: FolderLike[] = [
@@ -43,3 +44,4 @@ const folders: FolderLike[] = [
   const items = [{ folder_id: "b" }, { folder_id: "b" }, { folder_id: "a" }];
   assertEqual(folderItemCount(items, "b"), 2, "folderItemCount");
 }
+});

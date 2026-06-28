@@ -1,5 +1,7 @@
 import { formatPermissions, formatSize, formatDate } from "./SFTPTypes.ts";
+import { test } from "vitest";
 
+test("SFTPTypes.format", async () => {
 let fails = 0;
 function assertEqual(actual: unknown, expected: unknown, msg: string) {
   if (actual !== expected) { console.error(`FAIL ${msg}: got ${actual}, want ${expected}`); fails++; }
@@ -28,4 +30,4 @@ function assertEqual(actual: unknown, expected: unknown, msg: string) {
 }
 
 if (fails > 0) { console.error(`${fails} failures`); throw new Error("test failures"); }
-console.log("all passed");
+});

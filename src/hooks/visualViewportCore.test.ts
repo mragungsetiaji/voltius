@@ -1,11 +1,12 @@
 import { computeKeyboardLayout, type ViewportInput } from "./visualViewportCore.ts";
+import { test } from "vitest";
 
+test("visualViewportCore", async () => {
 function assertEqual<T>(actual: T, expected: T, msg: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     console.error(`FAIL ${msg}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
     throw new Error(msg);
   }
-  console.log(`PASS ${msg}`);
 }
 
 // keyboard closed: visual == layout height, no inset
@@ -44,4 +45,4 @@ function assertEqual<T>(actual: T, expected: T, msg: string): void {
   assertEqual(r.offsetTop, 309, "scroll case: offsetTop surfaced");
   assertEqual(r.usableHeight, 476, "scroll case: usable = visual height");
 }
-console.log("ALL PASS");
+});

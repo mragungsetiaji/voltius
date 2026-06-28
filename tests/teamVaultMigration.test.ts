@@ -1,5 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "vitest";
 import {
   classifyVaultTransition,
   migrateVaultObject,
@@ -9,24 +8,24 @@ import {
 const isTeamVaultId = (vaultId: string | null | undefined) => vaultId === "team-1" || vaultId === "team-2";
 
 test("detects personal host move into a team vault", () => {
-  assert.equal(movedIntoTeamVault("personal", "team-1", isTeamVaultId), true);
-  assert.equal(movedIntoTeamVault(undefined, "team-1", isTeamVaultId), true);
+  expect(movedIntoTeamVault("personal", "team-1", isTeamVaultId)).toBe(true);
+  expect(movedIntoTeamVault(undefined, "team-1", isTeamVaultId)).toBe(true);
 });
 
 test("does not treat existing team updates as local-to-team moves", () => {
-  assert.equal(movedIntoTeamVault("team-1", "team-1", isTeamVaultId), false);
-  assert.equal(movedIntoTeamVault("personal", "personal", isTeamVaultId), false);
+  expect(movedIntoTeamVault("team-1", "team-1", isTeamVaultId)).toBe(false);
+  expect(movedIntoTeamVault("personal", "personal", isTeamVaultId)).toBe(false);
 });
 
 test("classifies local to team moves", () => {
-  assert.deepEqual(classifyVaultTransition("personal", "team-1", isTeamVaultId), {
+  expect(classifyVaultTransition("personal", "team-1", isTeamVaultId)).toEqual({
     kind: "local-to-team",
     destinationTeamId: "team-1",
   });
 });
 
 test("classifies team to team moves", () => {
-  assert.deepEqual(classifyVaultTransition("team-1", "team-2", isTeamVaultId), {
+  expect(classifyVaultTransition("team-1", "team-2", isTeamVaultId)).toEqual({
     kind: "team-to-team",
     sourceTeamId: "team-1",
     destinationTeamId: "team-2",
@@ -34,17 +33,17 @@ test("classifies team to team moves", () => {
 });
 
 test("classifies team to local moves", () => {
-  assert.deepEqual(classifyVaultTransition("team-1", "personal", isTeamVaultId), {
+  expect(classifyVaultTransition("team-1", "personal", isTeamVaultId)).toEqual({
     kind: "team-to-local",
     sourceTeamId: "team-1",
   });
 });
 
 test("classifies same-scope updates", () => {
-  assert.deepEqual(classifyVaultTransition("team-1", "team-1", isTeamVaultId), {
+  expect(classifyVaultTransition("team-1", "team-1", isTeamVaultId)).toEqual({
     kind: "same-scope",
   });
-  assert.deepEqual(classifyVaultTransition("personal", undefined, isTeamVaultId), {
+  expect(classifyVaultTransition("personal", undefined, isTeamVaultId)).toEqual({
     kind: "same-scope",
   });
 });
@@ -63,7 +62,7 @@ test("migrates local objects into a team after native update", async () => {
     removeTeam: async (teamId, id) => { calls.push(`remove-team:${teamId}:${id}`); },
   });
 
-  assert.deepEqual(calls, ["update-local", "save-team:team-1:item-1"]);
+  expect(calls).toEqual(["update-local", "save-team:team-1:item-1"]);
 });
 
 test("migrates team objects between teams without local writes", async () => {
@@ -80,7 +79,7 @@ test("migrates team objects between teams without local writes", async () => {
     removeTeam: async (teamId, id) => { calls.push(`remove-team:${teamId}:${id}`); },
   });
 
-  assert.deepEqual(calls, ["save-team:team-2:item-1", "remove-team:team-1:item-1"]);
+  expect(calls).toEqual(["save-team:team-2:item-1", "remove-team:team-1:item-1"]);
 });
 
 test("migrates team objects to local before removing from team", async () => {
@@ -97,7 +96,7 @@ test("migrates team objects to local before removing from team", async () => {
     removeTeam: async (teamId, id) => { calls.push(`remove-team:${teamId}:${id}`); },
   });
 
-  assert.deepEqual(calls, ["update-local", "remove-team:team-1:item-1"]);
+  expect(calls).toEqual(["update-local", "remove-team:team-1:item-1"]);
 });
 
 test("same-scope helper updates local only for local objects", async () => {
@@ -114,7 +113,7 @@ test("same-scope helper updates local only for local objects", async () => {
     removeTeam: async (teamId, id) => { calls.push(`remove-team:${teamId}:${id}`); },
   });
 
-  assert.deepEqual(calls, ["update-local"]);
+  expect(calls).toEqual(["update-local"]);
 });
 
 test("cascade dependencies use the same local-to-team migration path", async () => {
@@ -135,7 +134,7 @@ test("cascade dependencies use the same local-to-team migration path", async () 
     });
   }
 
-  assert.deepEqual(calls, [
+  expect(calls).toEqual([
     "update-local:key-1",
     "save-team:team-1:key-1",
     "update-local:identity-1",

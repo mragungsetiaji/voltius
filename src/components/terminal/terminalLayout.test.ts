@@ -1,5 +1,7 @@
 import { terminalViewportClass } from "./terminalLayout.ts";
+import { test } from "vitest";
 
+test("terminalLayout", async () => {
 function equal<T>(actual: T, expected: T) {
   if (actual !== expected) throw new Error(`Expected ${String(expected)}, got ${String(actual)}`);
 }
@@ -10,4 +12,4 @@ function run() {
 }
 
 run();
-console.log("terminalLayout tests passed");
+});

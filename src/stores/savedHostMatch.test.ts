@@ -1,12 +1,13 @@
 import { findSavedHostMatch } from "./savedHostMatch.ts";
 import type { Connection } from "../types/index.ts";
+import { test } from "vitest";
 
+test("savedHostMatch", async () => {
 function assertEqual<T>(actual: T, expected: T, msg: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     console.error(`FAIL ${msg}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
     throw new Error(msg);
   }
-  console.log(`PASS ${msg}`);
 }
 
 function conn(partial: Partial<Connection>): Connection {
@@ -50,5 +51,4 @@ assertEqual(findSavedHostMatch([teamVault], target), undefined, "non-personal va
 assertEqual(findSavedHostMatch([], target), undefined, "empty list returns undefined");
 
 assertEqual(findSavedHostMatch([exact, noVault], target)?.id, "A", "first match wins");
-
-console.log("All savedHostMatch tests passed.");
+});

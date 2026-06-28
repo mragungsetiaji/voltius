@@ -1,5 +1,7 @@
 import { isDoubleTap } from "./doubleTap.ts";
+import { test } from "vitest";
 
+test("doubleTap", async () => {
 function assert(cond: boolean, msg: string) { if (!cond) throw new Error(msg); }
 
 const opts = { ms: 300, px: 24 };
@@ -15,5 +17,4 @@ assert(!isDoubleTap({ t: 0, x: 100, y: 100 }, { t: 100, x: 200, y: 100 }, opts),
 
 // Exactly at the thresholds → inclusive.
 assert(isDoubleTap({ t: 0, x: 0, y: 0 }, { t: 300, x: 24, y: 0 }, opts), "threshold boundaries are inclusive");
-
-console.log("doubleTap: OK");
+});

@@ -1,5 +1,7 @@
 import { resolveSnippetPayload } from "./snippetRunCore.ts";
+import { test } from "vitest";
 
+test("snippetRunCore", async () => {
 function assertEqual<T>(actual: T, expected: T, msg: string) {
   const a = JSON.stringify(actual), e = JSON.stringify(expected);
   if (a !== e) throw new Error(`${msg}\n  expected: ${e}\n  actual:   ${a}`);
@@ -23,5 +25,4 @@ const ctx = { connectionHost: "h", connectionUsername: "u", connectionName: "n",
   assertEqual(r.missing.length, 1, "exactly one missing user var");
   assertEqual(r.partialTemplate, "deploy {{env}}", "user var left intact in partialTemplate");
 }
-
-console.log("snippetRunCore: OK");
+});

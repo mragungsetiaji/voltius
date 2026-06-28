@@ -6,7 +6,9 @@ import {
   extendSelection,
   type CellMetrics,
 } from "./mobileTerminalGestures.ts";
+import { test } from "vitest";
 
+test("mobileTerminalGestures", async () => {
 function assert(cond: boolean, msg: string) { if (!cond) throw new Error(msg); }
 function eq<T>(a: T, b: T, msg: string) { if (JSON.stringify(a) !== JSON.stringify(b)) throw new Error(`${msg}: got ${JSON.stringify(a)} want ${JSON.stringify(b)}`); }
 
@@ -57,5 +59,4 @@ eq(
   { kind: "lines", start: 97, end: 100 },
   "cross line upward → whole lines",
 );
-
-console.log("mobileTerminalGestures: OK");
+});

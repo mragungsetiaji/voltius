@@ -1,11 +1,12 @@
 import { buildDecryptKeyCandidates } from "./vaultKeyCandidates.ts";
+import { test } from "vitest";
 
+test("vaultKeyCandidates", async () => {
 function assertEqual<T>(actual: T, expected: T, msg: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     console.error(`FAIL ${msg}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
     throw new Error(msg);
   }
-  console.log(`PASS ${msg}`);
 }
 
 const A = [1, 2, 3];
@@ -55,3 +56,4 @@ assertEqual(
   [],
   "all-null yields empty list",
 );
+});

@@ -1,11 +1,12 @@
 import { migrateConnectivitySettings } from "./connectivitySettingsMigration.ts";
+import { test } from "vitest";
 
+test("connectivitySettingsMigration", async () => {
 function assertEqual<T>(actual: T, expected: T, msg: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     console.error(`FAIL ${msg}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
     throw new Error(msg);
   }
-  console.log(`PASS ${msg}`);
 }
 
 assertEqual(
@@ -31,3 +32,4 @@ assertEqual(
   { state: {}, changed: false },
   "missing data is untouched",
 );
+});

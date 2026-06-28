@@ -1,4 +1,7 @@
 import { selectEffectiveSyncStatus } from "./syncStatus.ts";
+import { test } from "vitest";
+
+test("syncStatus", async () => {
 function eq<T>(a: T, e: T, m: string) { if (JSON.stringify(a) !== JSON.stringify(e)) { console.error(`FAIL ${m}: expected ${JSON.stringify(e)}, got ${JSON.stringify(a)}`); throw new Error(m); } console.log(`PASS ${m}`); }
 
 const V = { status: "success" as const, lastSync: null, error: null };
@@ -11,4 +14,4 @@ eq(selectEffectiveSyncStatus({ voltius: V, gist: G, accountMode: "local", isPro:
 eq(selectEffectiveSyncStatus({ voltius: V, gist: G, accountMode: "local", isPro: false, gistPluginEnabled: true }).configured, true, "gist configured");
 // Nothing configured → not configured, falls back to voltius state.
 eq(selectEffectiveSyncStatus({ voltius: V, gist: { ...G, configured: false }, accountMode: "local", isPro: false, gistPluginEnabled: false }).configured, false, "nothing configured");
-console.log("ALL PASS");
+});

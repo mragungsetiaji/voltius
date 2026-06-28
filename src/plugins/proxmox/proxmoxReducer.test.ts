@@ -1,5 +1,7 @@
 import { reducer, initial } from "./proxmoxReducer.ts";
+import { test } from "vitest";
 
+test("proxmoxReducer", async () => {
 function assertEqual<T>(actual: T, expected: T, msg: string): void {
   const a = JSON.stringify(actual);
   const e = JSON.stringify(expected);
@@ -40,5 +42,4 @@ function assertEqual<T>(actual: T, expected: T, msg: string): void {
   const s = reducer(base, { type: "RESET" });
   assertEqual(s, initial, "RESET to initial");
 }
-
-console.log("ok");
+});

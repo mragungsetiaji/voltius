@@ -6,13 +6,14 @@ import {
   MANIFEST_VERSION,
   type LiveSessionManifest,
 } from "./liveSessionManifestCore.ts";
+import { test } from "vitest";
 
+test("liveSessionManifest", async () => {
 function assertEqual<T>(actual: T, expected: T, msg: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     console.error(`FAIL ${msg}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
     throw new Error(msg);
   }
-  console.log(`PASS ${msg}`);
 }
 
 const now = new Date("2026-06-11T12:00:00Z");
@@ -178,5 +179,4 @@ const prunedTombs = pruneStale(
   now,
 );
 assertEqual(Object.keys(prunedTombs), ["fresh"], "tombstones older than 60 days pruned");
-
-console.log("liveSessionManifest tests passed");
+});

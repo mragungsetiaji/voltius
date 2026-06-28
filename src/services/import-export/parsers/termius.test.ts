@@ -2,7 +2,9 @@ import { bundleFromTermius } from "./termius.ts";
 
 // Snapshot fixture shape matches what the Rust extractor returns:
 //   { version: 2, records: [{ db_name, termius_id, foreign_keys?, foreign_key_arrays?, decrypted, … }] }
+import { test } from "vitest";
 
+test("termius", async () => {
 interface TermiusRecord {
   db_name: string;
   termius_id: number;
@@ -142,7 +144,6 @@ function snippet(id: number, label: string, script: string): TermiusRecord {
 function run(name: string, fn: () => void): void {
   try {
     fn();
-    console.log(`PASS ${name}`);
   } catch (error) {
     console.error(`FAIL ${name}`);
     throw error;
@@ -405,4 +406,5 @@ run("skips hosts whose status is deleted (defense in depth)", () => {
 
   assertEqual(bundle.connections.length, 1);
   assertEqual(bundle.connections[0]?.name, "alive");
+});
 });

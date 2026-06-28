@@ -1,5 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "vitest";
 import { markTeamVaultLoadedAfterLocalActivation } from "../src/services/teamVaultActivation.ts";
 
 test("local team vault activation marks the vault loaded", () => {
@@ -9,5 +8,5 @@ test("local team vault activation marks the vault loaded", () => {
     setStatus: (teamId, status) => { calls.push([teamId, status]); },
   });
 
-  assert.deepEqual(calls, [["team-a", "loaded"]]);
+  expect(calls).toEqual([["team-a", "loaded"]]);
 });

@@ -1,5 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "vitest";
 import { selectRecentHosts, partitionLauncherHosts } from "../src/components/layout/newSessionItems.ts";
 import type { Connection } from "../src/types/index.ts";
 
@@ -20,7 +19,7 @@ test("selectRecentHosts: only last_used, excludes active, newest first, capped",
     conn({ id: "d", last_used_at: "2024-01-04T00:00:00Z" }),
   ];
   const recent = selectRecentHosts(cs, new Set(["d"]), 2);
-  assert.deepEqual(recent.map((c) => c.id), ["b", "a"]);
+  expect(recent.map((c) => c.id)).toEqual(["b", "a"]);
 });
 
 test("selectRecentHosts: no cap returns all eligible", () => {
@@ -28,7 +27,7 @@ test("selectRecentHosts: no cap returns all eligible", () => {
     conn({ id: "a", last_used_at: "2024-01-01T00:00:00Z" }),
     conn({ id: "b", last_used_at: "2024-01-02T00:00:00Z" }),
   ];
-  assert.deepEqual(selectRecentHosts(cs, new Set()).map((c) => c.id), ["b", "a"]);
+  expect(selectRecentHosts(cs, new Set()).map((c) => c.id)).toEqual(["b", "a"]);
 });
 
 test("partitionLauncherHosts: empty query splits recent (capped) and the rest", () => {
@@ -38,8 +37,8 @@ test("partitionLauncherHosts: empty query splits recent (capped) and the rest", 
     conn({ id: "c", last_used_at: null, name: "fresh" }),
   ];
   const { recent, hosts } = partitionLauncherHosts(cs, new Set(), "", 5);
-  assert.deepEqual(recent.map((c) => c.id), ["b", "a"]);
-  assert.deepEqual(hosts.map((c) => c.id), ["c"]);
+  expect(recent.map((c) => c.id)).toEqual(["b", "a"]);
+  expect(hosts.map((c) => c.id)).toEqual(["c"]);
 });
 
 test("partitionLauncherHosts: query filters by name/host/username, recent empty", () => {
@@ -48,9 +47,9 @@ test("partitionLauncherHosts: query filters by name/host/username, recent empty"
     conn({ id: "b", name: "db", host: "10.0.0.5", username: "postgres" }),
   ];
   const r = partitionLauncherHosts(cs, new Set(), "post", 5);
-  assert.deepEqual(r.recent, []);
-  assert.deepEqual(r.hosts.map((c) => c.id), ["b"]);
+  expect(r.recent).toEqual([]);
+  expect(r.hosts.map((c) => c.id)).toEqual(["b"]);
 
   const r2 = partitionLauncherHosts(cs, new Set(), "WEB", 5);
-  assert.deepEqual(r2.hosts.map((c) => c.id), ["a"]);
+  expect(r2.hosts.map((c) => c.id)).toEqual(["a"]);
 });

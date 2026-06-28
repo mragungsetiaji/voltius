@@ -1,11 +1,12 @@
 import { mobileSettingsNav, visiblePlugins, MOBILE_HIDDEN_SECTIONS } from "./settingsMobileCore.ts";
+import { test } from "vitest";
 
+test("settingsMobileCore", async () => {
 function assertEqual<T>(actual: T, expected: T, msg: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     console.error(`FAIL ${msg}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
     throw new Error(msg);
   }
-  console.log(`PASS ${msg}`);
 }
 
 // shortcuts is hidden on mobile
@@ -44,3 +45,4 @@ function assertEqual<T>(actual: T, expected: T, msg: string): void {
   const out = visiblePlugins(plugins, true);
   assertEqual(out.map((p) => p.manifest.id), ["b"], "mobile drops desktopOnly");
 }
+});

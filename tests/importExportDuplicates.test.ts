@@ -1,5 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "vitest";
 import { existingConnectionsForVault } from "../src/services/import-export/context.ts";
 
 test("scopes import duplicate candidates to the target vault", () => {
@@ -9,16 +8,7 @@ test("scopes import duplicate candidates to the target vault", () => {
     { id: "legacy-personal", host: "legacy.example.com", port: 22, username: "root" },
   ];
 
-  assert.deepEqual(
-    existingConnectionsForVault(connections, "team-b").map((c) => c.id),
-    [],
-  );
-  assert.deepEqual(
-    existingConnectionsForVault(connections, "team-a").map((c) => c.id),
-    ["team-1"],
-  );
-  assert.deepEqual(
-    existingConnectionsForVault(connections, "personal").map((c) => c.id),
-    ["personal-1", "legacy-personal"],
-  );
+  expect(existingConnectionsForVault(connections, "team-b").map((c) => c.id)).toEqual([]);
+  expect(existingConnectionsForVault(connections, "team-a").map((c) => c.id)).toEqual(["team-1"]);
+  expect(existingConnectionsForVault(connections, "personal").map((c) => c.id)).toEqual(["personal-1", "legacy-personal"]);
 });

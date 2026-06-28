@@ -1,13 +1,12 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "vitest";
 import {
   shouldShowBlockingTeamVaultLoad,
   TeamVaultRefreshQueue,
 } from "../src/services/teamVaultRefresh.ts";
 
 test("background team vault refresh does not show blocking loading state", () => {
-  assert.equal(shouldShowBlockingTeamVaultLoad({ background: true }), false);
-  assert.equal(shouldShowBlockingTeamVaultLoad({ background: false }), true);
+  expect(shouldShowBlockingTeamVaultLoad({ background: true })).toBe(false);
+  expect(shouldShowBlockingTeamVaultLoad({ background: false })).toBe(true);
 });
 
 test("team vault refresh queue coalesces overlapping refreshes per team", async () => {
@@ -23,13 +22,13 @@ test("team vault refresh queue coalesces overlapping refreshes per team", async 
     runs += 1;
   });
 
-  assert.equal(first, second);
-  assert.equal(runs, 1);
+  expect(first).toBe(second);
+  expect(runs).toBe(1);
   release?.();
   await Promise.all([first, second]);
 
   await queue.run("team-a", async () => {
     runs += 1;
   });
-  assert.equal(runs, 2);
+  expect(runs).toBe(2);
 });

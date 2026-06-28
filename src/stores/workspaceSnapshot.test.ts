@@ -5,13 +5,14 @@ import {
   type SessionInput,
   type SnapshotLayout,
 } from "./workspaceSnapshotCore.ts";
+import { test } from "vitest";
 
+test("workspaceSnapshot", async () => {
 function assertEqual<T>(actual: T, expected: T, msg: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     console.error(`FAIL ${msg}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
     throw new Error(msg);
   }
-  console.log(`PASS ${msg}`);
 }
 
 const layout: SnapshotLayout = {
@@ -118,5 +119,4 @@ mutLayout.splitTabs.push({});
 mutLayout.titlebarOrder.push("session:x");
 assertEqual(mutSnap.layout.splitTabs.length, 0, "snapshot layout is decoupled from caller mutation");
 assertEqual(mutSnap.layout.titlebarOrder.length, 0, "snapshot titlebarOrder is decoupled from caller mutation");
-
-console.log("All workspace snapshot tests passed");
+});

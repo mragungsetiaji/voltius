@@ -1,5 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "vitest";
 import { buildTeamVaultTransferPlan } from "../src/services/teamVaultPermissions.ts";
 
 const canAll = () => true;
@@ -36,12 +35,12 @@ test("host transfer includes primary and jump-host identities and keys once", ()
     snippetFolders: [],
   });
 
-  assert.deepEqual([...plan.connections.keys()], ["host-1"]);
-  assert.deepEqual([...plan.identities.keys()].sort(), ["identity-1", "identity-2"]);
-  assert.deepEqual([...plan.keys.keys()], ["key-1"]);
-  assert.equal(plan.allowed, true);
-  assert.deepEqual(plan.destinationPermissions.sort(), ["EDIT_CONNECTIONS", "EDIT_IDENTITIES", "EDIT_KEYS"]);
-  assert.deepEqual(plan.sourcePermissions.sort(), ["COPY_SECRETS", "VIEW_SECRETS"]);
+  expect([...plan.connections.keys()]).toEqual(["host-1"]);
+  expect([...plan.identities.keys()].sort()).toEqual(["identity-1", "identity-2"]);
+  expect([...plan.keys.keys()]).toEqual(["key-1"]);
+  expect(plan.allowed).toBe(true);
+  expect(plan.destinationPermissions.sort()).toEqual(["EDIT_CONNECTIONS", "EDIT_IDENTITIES", "EDIT_KEYS"]);
+  expect(plan.sourcePermissions.sort()).toEqual(["COPY_SECRETS", "VIEW_SECRETS"]);
 });
 
 test("folder transfer includes nested folders and descendant objects", () => {
@@ -74,11 +73,11 @@ test("folder transfer includes nested folders and descendant objects", () => {
     snippetFolders: [],
   });
 
-  assert.deepEqual([...plan.folders.keys()].sort(), ["folder-child", "folder-root"]);
-  assert.deepEqual([...plan.connections.keys()], ["host-1"]);
-  assert.equal(plan.allowed, true);
-  assert.deepEqual(plan.destinationPermissions.sort(), ["EDIT_CONNECTIONS", "EDIT_FOLDERS"]);
-  assert.deepEqual(plan.sourcePermissions.sort(), ["EDIT_CONNECTIONS", "EDIT_FOLDERS"]);
+  expect([...plan.folders.keys()].sort()).toEqual(["folder-child", "folder-root"]);
+  expect([...plan.connections.keys()]).toEqual(["host-1"]);
+  expect(plan.allowed).toBe(true);
+  expect(plan.destinationPermissions.sort()).toEqual(["EDIT_CONNECTIONS", "EDIT_FOLDERS"]);
+  expect(plan.sourcePermissions.sort()).toEqual(["EDIT_CONNECTIONS", "EDIT_FOLDERS"]);
 });
 
 test("target is denied when destination lacks required dependency permission", () => {
@@ -95,6 +94,6 @@ test("target is denied when destination lacks required dependency permission", (
     snippetFolders: [],
   });
 
-  assert.equal(plan.allowed, false);
-  assert.deepEqual(plan.deniedReasons, ["Missing EDIT_KEYS on team-b"]);
+  expect(plan.allowed).toBe(false);
+  expect(plan.deniedReasons).toEqual(["Missing EDIT_KEYS on team-b"]);
 });

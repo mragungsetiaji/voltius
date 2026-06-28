@@ -1,5 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "vitest";
 import { selectVaultScopedItems } from "../src/utils/vaultScopedItems.ts";
 
 type Item = { id: string; vault_id?: string };
@@ -16,37 +15,28 @@ const teamItems: Record<string, Item[]> = {
 };
 
 test("selects local vault items from the local store instead of team maps", () => {
-  assert.deepEqual(
-    selectVaultScopedItems({
+  expect(selectVaultScopedItems({
       vaultId: "local-vault-1",
       localItems,
       teamItems,
       teamVaultIds: new Set(["team-1"]),
-    }).map((item) => item.id),
-    ["local-1"],
-  );
+    }).map((item) => item.id)).toEqual(["local-1"]);
 });
 
 test("selects team vault items from the team map", () => {
-  assert.deepEqual(
-    selectVaultScopedItems({
+  expect(selectVaultScopedItems({
       vaultId: "team-1",
       localItems,
       teamItems,
       teamVaultIds: new Set(["team-1"]),
-    }).map((item) => item.id),
-    ["team-1-item"],
-  );
+    }).map((item) => item.id)).toEqual(["team-1-item"]);
 });
 
 test("selects only personal items for the personal vault", () => {
-  assert.deepEqual(
-    selectVaultScopedItems({
+  expect(selectVaultScopedItems({
       vaultId: "personal",
       localItems,
       teamItems,
       teamVaultIds: new Set(["team-1"]),
-    }).map((item) => item.id),
-    ["personal-missing", "personal-explicit"],
-  );
+    }).map((item) => item.id)).toEqual(["personal-missing", "personal-explicit"]);
 });

@@ -6,13 +6,14 @@ import {
   localShellNeedsPath,
   type ShellOption,
 } from "./newSessionItems.ts";
+import { test } from "vitest";
 
+test("newSessionItems", async () => {
 function assertEqual<T>(actual: T, expected: T, msg: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     console.error(`FAIL ${msg}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
     throw new Error(msg);
   }
-  console.log(`PASS ${msg}`);
 }
 
 const zsh: ShellOption = { name: "zsh", path: "/bin/zsh" };
@@ -50,5 +51,4 @@ assertEqual(selectLocalShellItems([], "zzz"), [], "non-keyword with no detected 
 // localShellNeedsPath (keyed by display label)
 assertEqual([...localShellNeedsPath([zsh, bash, fish1])], [], "no collisions -> empty set");
 assertEqual([...localShellNeedsPath([fish1, fish2, zsh])], ["Fish"], "duplicate name -> label flagged");
-
-console.log("All newSessionItems local-shell tests passed.");
+});

@@ -1,12 +1,13 @@
 import { buildTransferTargets } from "./sftpTransferCore.ts";
 import type { FileEntry } from "@/components/filetransfer/SFTPTypes";
+import { test } from "vitest";
 
+test("sftpTransferCore", async () => {
 function assertEqual<T>(actual: T, expected: T, msg: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     console.error(`FAIL ${msg}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
     throw new Error(msg);
   }
-  console.log(`PASS ${msg}`);
 }
 
 const file = (name: string, isDir = false): FileEntry => ({ name, path: `/src/${name}`, size: 1, isDir, isSymlink: false });
@@ -23,5 +24,4 @@ const file = (name: string, isDir = false): FileEntry => ({ name, path: `/src/${
   const out = buildTransferTargets([file("x")], "/");
   assertEqual(out[0].dstPath, "/x", "root dest joins without doubling slash");
 }
-
-console.log("ALL PASS");
+});

@@ -1,11 +1,12 @@
 import { handleBack, initialMobileNavState, type MobileNavState } from "./mobileNavCore.ts";
+import { test } from "vitest";
 
+test("mobileNavCore", async () => {
 function assertEqual<T>(actual: T, expected: T, msg: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     console.error(`FAIL ${msg}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
     throw new Error(msg);
   }
-  console.log(`PASS ${msg}`);
 }
 
 // back closes sheet first
@@ -101,5 +102,4 @@ assertEqual(initialMobileNavState.tab, "hosts", "initial tab is hosts");
   assertEqual(r.handled, true, "back handled for snippet-target sheet");
   assertEqual(r.state.sheet, null, "snippet-target sheet cleared on back");
 }
-
-console.log("ALL PASS");
+});

@@ -1,5 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "vitest";
 import { clearPersistedAccountUiState } from "../src/stores/persistedAccountUiState.ts";
 
 class MemoryStorage {
@@ -26,7 +25,7 @@ test("clears persisted vault and team state when resetting an account", () => {
 
   clearPersistedAccountUiState(storage);
 
-  assert.equal(storage.getItem("voltius-vaults"), null);
-  assert.equal(storage.getItem("voltius-teams"), null);
-  assert.equal(storage.getItem("voltius-theme"), "keep");
+  expect(storage.getItem("voltius-vaults")).toBe(null);
+  expect(storage.getItem("voltius-teams")).toBe(null);
+  expect(storage.getItem("voltius-theme")).toBe("keep");
 });
