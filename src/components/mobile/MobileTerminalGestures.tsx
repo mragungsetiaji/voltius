@@ -78,7 +78,8 @@ export default function MobileTerminalGestures({ sessionId, active }: { sessionI
     };
 
     const showPaste = (x: number, y: number) => {
-      setToolbar({ x, y, mode: "paste" });
+      const root = rootRef.current?.getBoundingClientRect();
+      setToolbar({ x: x - (root?.left ?? 0), y: y - (root?.top ?? 0), mode: "paste" });
     };
 
     const showSelectionToolbar = () => {
@@ -86,8 +87,9 @@ export default function MobileTerminalGestures({ sessionId, active }: { sessionI
       const m = metrics();
       const pos = api?.getSelectionPosition();
       if (!api || !m || !pos) return;
-      const left = m.left + pos.start.x * m.cellWidth;
-      const top = m.top + (pos.start.y - m.viewportTop) * m.cellHeight;
+      const root = rootRef.current?.getBoundingClientRect();
+      const left = m.left + pos.start.x * m.cellWidth - (root?.left ?? 0);
+      const top = m.top + (pos.start.y - m.viewportTop) * m.cellHeight - (root?.top ?? 0);
       setToolbar({ x: left, y: top, mode: "select" });
     };
 
@@ -232,6 +234,8 @@ export default function MobileTerminalGestures({ sessionId, active }: { sessionI
       container.removeEventListener("touchcancel", onTouchCancel, rm);
       clearLongPress();
       lastTap.current = null;
+      getTerminalApi(sessionId)?.clearSelection();
+      closeToolbar();
     };
   }, [active, sessionId]);
 
