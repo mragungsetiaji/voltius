@@ -62,6 +62,13 @@ export function useHostMetrics(
     }
 
     let cancelled = false;
+    // New session (or restart): drop the previous host's buffers so its sparklines
+    // don't linger while the new host's stream fills in fresh samples.
+    setSnap(null);
+    setCpuH([]);
+    setMemH([]);
+    setRxH([]);
+    setTxH([]);
     setDisks([]);
     setDisksLoading(true);
 
