@@ -48,6 +48,16 @@ struct ConflictContext {
     pending_conflicts: Arc<PendingConflicts>,
 }
 
+/// `new_interactive`'s return: the handler plus the shared slots `connect`
+/// needs after the handshake (rejection reason, remote-forward routes, and the
+/// server's SSH banner for Windows detection).
+type InteractiveClient = (
+    SshClient,
+    Arc<Mutex<Option<String>>>,
+    RemoteRouteMap,
+    Arc<Mutex<Option<Vec<u8>>>>,
+);
+
 pub struct SshClient {
     host: String,
     port: u16,
@@ -58,6 +68,9 @@ pub struct SshClient {
     /// Remote-forward route table: (bind_host, remote_port) → RemoteRoute.
     /// Populated by PortForwardManager before calling tcpip_forward.
     pub remote_routes: RemoteRouteMap,
+    /// Server's SSH identification banner, captured in `kex_done`. Read after
+    /// the handshake to detect Windows OpenSSH (see `is_windows_sshid`).
+    remote_sshid: Arc<Mutex<Option<Vec<u8>>>>,
 }
 
 impl SshClient {
@@ -77,13 +90,16 @@ impl SshClient {
                 rejection_reason: Arc::clone(&rejection_reason),
                 conflict_ctx: None,
                 remote_routes,
+                remote_sshid: Arc::new(Mutex::new(None)),
             },
             rejection_reason,
         )
     }
 
-    /// Interactive constructor for the final SSH session.
-    /// Returns an extra `RemoteRouteMap` that PortForwardManager uses to register routes.
+    /// Interactive constructor for the final SSH session. Beyond the handler it
+    /// hands back the rejection-reason slot, the `RemoteRouteMap`
+    /// PortForwardManager registers routes in, and the remote SSH banner slot
+    /// (`kex_done` fills it; `connect` reads it to detect Windows).
     pub fn new_interactive(
         host: String,
         port: u16,
@@ -91,9 +107,10 @@ impl SshClient {
         app: AppHandle,
         session_id: String,
         pending_conflicts: Arc<PendingConflicts>,
-    ) -> (Self, Arc<Mutex<Option<String>>>, RemoteRouteMap) {
+    ) -> InteractiveClient {
         let rejection_reason = Arc::new(Mutex::new(None::<String>));
         let remote_routes: RemoteRouteMap = Arc::new(Mutex::new(HashMap::new()));
+        let remote_sshid = Arc::new(Mutex::new(None));
         (
             Self {
                 host,
@@ -106,15 +123,30 @@ impl SshClient {
                     pending_conflicts,
                 }),
                 remote_routes: Arc::clone(&remote_routes),
+                remote_sshid: Arc::clone(&remote_sshid),
             },
             rejection_reason,
             remote_routes,
+            remote_sshid,
         )
     }
 }
 
 impl client::Handler for SshClient {
     type Error = russh::Error;
+
+    // Capture the server's SSH identification banner once key exchange completes
+    // (before we open the shell) so `connect` can detect Windows OpenSSH and
+    // pick a shell path it can actually run.
+    async fn kex_done(
+        &mut self,
+        _shared_secret: Option<&[u8]>,
+        _names: &russh::Names,
+        session: &mut client::Session,
+    ) -> Result<(), Self::Error> {
+        *self.remote_sshid.lock().await = Some(session.remote_sshid().to_vec());
+        Ok(())
+    }
 
     async fn check_server_key(
         &mut self,
@@ -413,6 +445,20 @@ pub async fn authenticate_handle(
 const CONNECT_MAX_ATTEMPTS: u32 = 3;
 const CONNECT_RETRY_BACKOFF_MS: u64 = 300;
 
+/// Detect a Windows OpenSSH server from its SSH identification banner. Windows'
+/// bundled sshd announces itself as e.g. `SSH-2.0-OpenSSH_for_Windows_9.5`.
+/// Windows has no POSIX `sh`/`base64`/`tmux`, so our shell-integration and
+/// persistence exec bootstraps (and `export` env injection) can't run there —
+/// they leave a connected-but-blank terminal. Detecting the banner lets us fall
+/// back to a plain interactive shell, which Windows OpenSSH serves over ConPTY.
+/// The banner is shell-independent, so it works regardless of whether the
+/// server's default ssh shell is cmd.exe or PowerShell.
+fn is_windows_sshid(sshid: &[u8]) -> bool {
+    String::from_utf8_lossy(sshid)
+        .to_ascii_lowercase()
+        .contains("windows")
+}
+
 // Host-key rejections set `rejection_reason` instead, so they never reach here.
 fn is_transient_connect_error(e: &russh::Error) -> bool {
     use std::io::ErrorKind;
@@ -475,12 +521,14 @@ pub async fn connect(
 
     #[allow(unused_assignments)]
     let mut final_routes: RemoteRouteMap = Arc::new(Mutex::new(HashMap::new()));
+    #[allow(unused_assignments)]
+    let mut final_sshid: Arc<Mutex<Option<Vec<u8>>>> = Arc::new(Mutex::new(None));
 
     let mut final_handle: client::Handle<SshClient> = if jump_hosts.is_empty() {
         // Rebuilt each attempt: `connect` consumes the handler.
         let mut attempt = 1;
         loop {
-            let (ssh_client, rejection_reason, routes) = SshClient::new_interactive(
+            let (ssh_client, rejection_reason, routes, sshid) = SshClient::new_interactive(
                 host.to_string(),
                 port,
                 Arc::clone(&known_hosts),
@@ -491,6 +539,7 @@ pub async fn connect(
             match client::connect(Arc::clone(&config), (host, port), ssh_client).await {
                 Ok(h) => {
                     final_routes = routes;
+                    final_sshid = sshid;
                     emit_step(
                         &app,
                         &session_id,
@@ -612,7 +661,7 @@ pub async fn connect(
             .map_err(|e| format!("Failed to open tunnel to final host {}: {}", host, e))?;
         let stream = channel.into_stream();
 
-        let (final_client, rejection_reason, routes) = SshClient::new_interactive(
+        let (final_client, rejection_reason, routes, sshid) = SshClient::new_interactive(
             host.to_string(),
             port,
             Arc::clone(&known_hosts),
@@ -621,6 +670,7 @@ pub async fn connect(
             Arc::clone(&pending_conflicts),
         );
         final_routes = routes;
+        final_sshid = sshid;
         let h = client::connect_stream(Arc::clone(&config), stream, final_client)
             .await
             .map_err(|e| {
@@ -661,6 +711,21 @@ pub async fn connect(
         passphrase,
     )
     .await?;
+
+    // Windows OpenSSH has no POSIX `sh`/`base64`/`tmux`, so the shell-integration
+    // and persistence exec bootstraps (and the `export` env injection below) can't
+    // run there and leave a connected-but-blank terminal. Detect it from the SSH
+    // banner captured in `kex_done` and fall back to a plain interactive shell,
+    // which Windows serves fine over ConPTY.
+    let remote_is_windows = final_sshid
+        .lock()
+        .await
+        .as_deref()
+        .map(is_windows_sshid)
+        .unwrap_or(false);
+    let shell_integration = shell_integration && !remote_is_windows;
+    let persist = persist && !remote_is_windows;
+    let restore = restore && !remote_is_windows;
 
     // Attach-only (reconnect/join): verify the multiplexer session still exists
     // before attaching — attaching never creates, so a dead session must fail
@@ -814,7 +879,9 @@ pub async fn connect(
     let (mut read_half, write_half) = channel.split();
     let mut writer = write_half.make_writer();
 
-    if !env_vars.is_empty() {
+    // `export KEY=val` is POSIX syntax; on a Windows cmd.exe/PowerShell shell it
+    // would just echo errors, so skip it there (see `remote_is_windows`).
+    if !env_vars.is_empty() && !remote_is_windows {
         let mut exports = String::new();
         for (key, value) in &env_vars {
             exports.push_str(&format!("export {}={}\n", key, shell_escape(value)));
@@ -966,7 +1033,26 @@ fn legacy_preferred() -> russh::Preferred {
 
 #[cfg(test)]
 mod tests {
-    use super::legacy_preferred;
+    use super::{is_windows_sshid, legacy_preferred};
+
+    #[test]
+    fn windows_openssh_banner_is_detected() {
+        // Windows' bundled sshd, regardless of default shell (cmd/PowerShell).
+        assert!(is_windows_sshid(b"SSH-2.0-OpenSSH_for_Windows_9.5"));
+        assert!(is_windows_sshid(b"SSH-2.0-OpenSSH_for_Windows_8.1"));
+        // Case-insensitive, in case a vendor rebrands the banner.
+        assert!(is_windows_sshid(b"SSH-2.0-Foo_WINDOWS_1.0"));
+    }
+
+    #[test]
+    fn posix_banners_are_not_windows() {
+        assert!(!is_windows_sshid(b"SSH-2.0-OpenSSH_9.6"));
+        assert!(!is_windows_sshid(
+            b"SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.4"
+        ));
+        assert!(!is_windows_sshid(b"SSH-2.0-dropbear_2022.83"));
+        assert!(!is_windows_sshid(b""));
+    }
 
     #[test]
     fn legacy_preferred_includes_weak_algorithms() {
