@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-07-02
+
+### Fixed
+
+- Windows OpenSSH sessions that connected but showed a blank terminal now fall
+  back to a plain shell
+- Host metrics sparklines reset when switching hosts, so a newly selected host
+  no longer briefly shows the previous host's graph data
+
 ## [0.8.0] - 2026-06-30
 
 ### Added
